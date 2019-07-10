@@ -1,14 +1,19 @@
 {
   "manifest_version": 2,
-  "name": "Linkshare",
-  "description": "A simple link sharing Chrome extension",
+  "name": "MaxxLink",
+  "description": "A  link sharing utility",
   "version": "1.0",
   "browser_action": {
-    "default_icon": "linkshare.png",
+    "default_icon": "img/save.png",
     "default_popup": "linkshare.html",
     "default_title": "Linkshare"
   },
+  "background": {
+    "scripts": ["js/zepto.js","js/pouchdb.js","js/background.js"],
+    "persistent": false
+  },
   "permissions": [
+    "tabs",
     "activeTab",
     "https://ajax.googleapis.com/"
   ],
