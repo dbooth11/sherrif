@@ -13,9 +13,9 @@ db.get(configdoc).then(function (doc) {
     alert(JSON.stringify(err));
   });
 
-// MapReduce function that orders by date
+// MapReduce function that gets records for the current useremail
 var map = function(doc) {
-    emit(doc.date,null);
+    emit(doc.recipient,config.useremail);
 };
 
 var loadLinks = function() {
@@ -23,8 +23,6 @@ var loadLinks = function() {
     var html = '<tbody>';
     for(var i in result.rows) {
       var doc = result.rows[i].doc;
-      
-      if(config.useremail == doc.recipient){
       html += '<tr>';
       if(doc.visited == 0){
       html += '<td class="green"><a class="truncate thelink" href="' + doc.url + '" title="' + doc.url + '" target="_new" data-from="' + doc.from +'"data-to="' + doc.recipient +'"data-id="' + doc._id +'" data-rev="' + doc._rev + '">' + doc.title + '</a><br />'
@@ -35,7 +33,6 @@ var loadLinks = function() {
       html += '</td>';
       html += '<td><button class="pseudo delete" data-id="' + doc._id +'" data-rev="' + doc._rev + '"><img src="img/remove.png" class="removeicon"/></button></td>'
       html += '</tr>';
-    }
     }
     html += '</tbody>';
     $('#thetable').html(html);
