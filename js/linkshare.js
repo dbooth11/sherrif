@@ -15,7 +15,9 @@ db.get(configdoc).then(function (doc) {
 
 // MapReduce function that gets records for the current useremail
 var map = function(doc) {
-    emit(doc.recipient,config.useremail);
+  if (doc.recipient == "don@dbooth.net") {
+    emit(doc,null);
+  }
 };
 
 var loadLinks = function() {
@@ -84,12 +86,12 @@ function kickOffReplication() {
 }
 
 loadLinks();
- 
-$("#save").bind("click", function() {
-  alert("DD");
-  saveLink();
-});
 
+$( document ).ready(function() {
+$("#save").bind("click", function() {
+  saveLink();
+})
+});
 
 $("#settingssave").bind("click", function() {
   if( $('#useremail').val() != config.useremail ) {
