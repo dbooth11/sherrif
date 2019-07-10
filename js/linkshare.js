@@ -2,7 +2,7 @@ var db = null;
 var data = null;
 var tab = null;
 var configdoc = "_local/config";
- config = null;
+var config = null;
 var replication = null;
 var remoteCouch = 'http://192.168.1.131:5984/';
 
@@ -15,7 +15,7 @@ db.get(configdoc).then(function (doc) {
 
 // MapReduce function that gets records for the current useremail
 var map = function(doc) {
-  if (doc.recipient == "don@dbooth.net") {
+  if (doc.recipient == config.useremail) {
     emit(doc,null);
   }
 };
@@ -76,8 +76,8 @@ function saveLink() {
       recipient: config.recipientemail,
       visited: 0
     }
-    document.getElementById('success').innerHTML = "Link sent!";
     db.post(doc);
+    document.getElementById('success').innerHTML = "Link sent!";
   });
 };
 
@@ -86,8 +86,8 @@ function kickOffReplication() {
 }
 
 loadLinks();
-
-$( document ).ready(function() {
+// JQuery $
+$(document).ready(function() {
 $("#save").bind("click", function() {
   saveLink();
 })
@@ -103,5 +103,5 @@ $("#settingssave").bind("click", function() {
 });
 
 //load the config
-//document.getElementById('#username').value(config.username);
-//document.getElementById('#useremail').val(config.useremail);
+// document.getElementById('#username').value(config.username);
+// document.getElementById('#useremail').val(config.useremail);

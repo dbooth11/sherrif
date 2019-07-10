@@ -22,7 +22,9 @@ var loadConfig = function(callback) {
 
 // MapReduce function that orders by date
 var map = function(doc) {
-    emit(doc.date,null);
+  if (doc.recipient == config.useremail) {
+    emit(doc,null);
+  }
 };
 
 var initializeIcon = function() {
@@ -31,9 +33,7 @@ var initializeIcon = function() {
     var newcount = 0;
     for(var i in result.rows) {
       var doc = result.rows[i].doc;
-      if(config.useremail == doc.recipient){
-        newcount += 1;
-      }
+      newcount += 1;
     }
     if(newcount > 0){
       chrome.browserAction.setBadgeText( { text: newcount.toString() });
