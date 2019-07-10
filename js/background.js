@@ -1,6 +1,7 @@
 var db = null;
 var configdoc = "_local/config";
 var config = null;
+var newcount = null;
 var replication = null;
 var remoteCouch = 'http://192.168.1.131:5984/';
 
@@ -19,10 +20,12 @@ var loadConfig = function(callback) {
     callback(null, data);
   });
 };
-
 // MapReduce function that orders by date
 var map = function(doc) {
   if (doc.recipient == config.useremail) {
+    if(doc.visited == 0){
+      newcount += 1;
+    }
     emit(doc,null);
   }
 };
@@ -30,11 +33,6 @@ var map = function(doc) {
 var initializeIcon = function() {
   kickOffReplication();
   db.query(map, {include_docs:true}).then(function(result) {
-    var newcount = 0;
-    for(var i in result.rows) {
-      var doc = result.rows[i].doc;
-      newcount += 1;
-    }
     if(newcount > 0){
       chrome.browserAction.setBadgeText( { text: newcount.toString() });
       chrome.browserAction.setBadgeBackgroundColor({color:'green'})
