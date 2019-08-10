@@ -8,8 +8,9 @@ var html = '';
 var replication = null;
 
 
-var  db = new PouchDB(database);
+var  db = new PouchDB(database, {auto_compaction: true});
 
+// Get the config again and if null, open manage page
 db.get(configdoc, function(err, data) {
   if (err) {
     chrome.runtime.openOptionsPage();
@@ -17,8 +18,7 @@ db.get(configdoc, function(err, data) {
   config = data;
 });
 
-
-// MapReduce function that orders by date
+// Map reduce to get current users friends and counts them
 var map = function(doc) {
   if (doc.friendemail == config.useremail) {
     if(doc.visited == 0){
@@ -28,6 +28,7 @@ var map = function(doc) {
   }
 };
 
+//Updates number badge on extension icon. Should update austomatically
 var initializeIcon = function() {
   db.query(map, {include_docs:true}).then(function(result) {
     if(newcount > 0){
@@ -40,31 +41,16 @@ var initializeIcon = function() {
   });
  };
 
+ // Ensure we have latest data
 var kickOffReplication = function() {
     replication = db.sync(config.url, {
       live:true, 
       retry:true
     })
 }
-var friendmap = function (doc) {
-  if (doc.useremail == config.useremail) {
-    emit(doc, null);
-  }
-};
-
-function loadFriends() {
-  db.query(friendmap, { include_docs: true }).then(function (result) {
-    for (var i in result.rows) {
-      var doc = result.rows[i].doc;
-      html += '<a class="friend" role="alert" data-to=' + doc.friendemail + '>' + doc.friendname + '</a>'
-    }
-   friends = html;
-  });
-}
-
+// Kick it off
 initializeIcon();
 
 function alertOb(text){
   alert(JSON.stringify(text));
 }
-  //alert(JSON.stringify(doc));

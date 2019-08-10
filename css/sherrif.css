@@ -2,14 +2,13 @@ html {
   height: 400px;
 }
 body {
-  font-size: 100%;
   margin-top: 10px;
   height:400px;
   width:400px;
 }
 
 #thetable {
-  width:80%;
+  width: 75%;
   height:100%;
   overflow: scroll;
   font-size:14px;
@@ -37,3 +36,4 @@ body {
   background-color: aquamarine;
 }
 .manageusers {float: right;}
+#friends button {float: right;}

@@ -9,7 +9,7 @@
     "default_title": "Sherrif"
   },
   "background": {
-    "scripts": ["js/zepto120.js","js/pouchdb-7.1.1.js","js/background.js"],
+    "scripts": ["js/zepto.js","js/pouchdb.js","js/background.js"],
     "persistent": false
   },
   "options_page": "manage.html",
