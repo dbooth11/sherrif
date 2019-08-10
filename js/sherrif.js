@@ -135,11 +135,11 @@ $( document ).ready(function() {
 
   // load the config. 
   loadConfig(function(err, data) {
-    if (!err && data.url) {
+ 
       $('#replicationurl').val(data.url);
       kickOffReplication();
       loadLinks(data);
-    } 
+    
   })
 });
 function alertOb(text){
