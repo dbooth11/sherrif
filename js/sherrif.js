@@ -2,6 +2,9 @@ var db = null;
 var configdoc = "_local/config";
 var config = null;
 var replication = null;
+var database = "sherrif";
+//TODO: This needs to be in configdoc.url
+var remoteCouch = 'http://127.0.0.1:5984/'+database;
 
 // get the currently seleted Chrome tab
 var getCurrentTab = function() {
@@ -23,6 +26,7 @@ var loadConfig = function(callback) {
   });
 };
 // save the config locally
+// TODO: use manage.html to set configdoc values
 var saveConfig = function(callback) {
   db.put(config,callback);
 };
@@ -94,6 +98,7 @@ var loadLinks = function(config) {
 //Create link record
 var saveLink = function(friend, callback) {
   getCurrentTab(function(err, tab) {
+    // Sets document ID to link+timestamp for filtering
     var seconds = new Date().getTime() / 1000;
     var id = 'link'+seconds.toString();
     var doc = {
@@ -111,21 +116,23 @@ var saveLink = function(friend, callback) {
   });
 };
 // Replicates the local Indexeddb to the Couchdb URL in the configdoc
+// TODO: Probably don't need to replicate here if background already did. Mostly for testing 
 var kickOffReplication = function() {
-  if (config.url) {
-    replication = db.sync(config.url, {
+
+    replication = db.sync(realRemote, {
       live:true, 
       retry:true
     }).on('change', function(change){ 
       console.log("change", change);
     });
-  }
+  
 }
 
 // when the page has loaded
 $( document ).ready(function() {
   console.log("document is ready!");
   // start up PouchDB
+  //TODO: configdoc needs to be available everywhere
   db = new PouchDB("sherrif");
   
   // when the Manage Users button is pressed, open options page
@@ -135,7 +142,7 @@ $( document ).ready(function() {
 
   // load the config. 
   loadConfig(function(err, data) {
- 
+     //TODO: Need to if(configdoc.url) here
       $('#replicationurl').val(data.url);
       kickOffReplication();
       loadLinks(data);

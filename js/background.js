@@ -1,3 +1,4 @@
+//This file mostly sets the number in the icon. Initial replication should happen here.
 var db = null;
 var configdoc = "_local/config";
 var database = "sherrif";
@@ -6,7 +7,8 @@ var newcount = null;
 var friends = '';
 var html = '';
 var replication = null;
-
+//TODO: This needs to be in configdoc.url
+var remoteCouch = 'http://127.0.0.1:5984/'+database;
 
 var  db = new PouchDB(database, {auto_compaction: true});
 
@@ -43,7 +45,7 @@ var initializeIcon = function() {
 
  // Ensure we have latest data
 var kickOffReplication = function() {
-    replication = db.sync(config.url, {
+    replication = db.sync(realRemote, {
       live:true, 
       retry:true
     })
