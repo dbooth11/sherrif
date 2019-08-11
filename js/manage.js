@@ -55,7 +55,7 @@ var kickOffReplication = function() {
     replication.cancel();
   }
     //TODO: Sync url should come from configdoc
-    replication = db.sync(realRemote, {
+    replication = db.sync(remoteCouch, {
       live:true, 
       retry:true
     }).on('change', function(change){ 

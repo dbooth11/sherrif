@@ -45,7 +45,7 @@ var initializeIcon = function() {
 
  // Ensure we have latest data
 var kickOffReplication = function() {
-    replication = db.sync(realRemote, {
+    replication = db.sync(remoteCouch, {
       live:true, 
       retry:true
     })

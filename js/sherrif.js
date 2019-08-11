@@ -119,7 +119,7 @@ var saveLink = function(friend, callback) {
 // TODO: Probably don't need to replicate here if background already did. Mostly for testing 
 var kickOffReplication = function() {
 
-    replication = db.sync(realRemote, {
+    replication = db.sync(remoteCouch, {
       live:true, 
       retry:true
     }).on('change', function(change){ 
