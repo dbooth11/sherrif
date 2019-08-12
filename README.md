@@ -52,4 +52,4 @@ For testing, create a 'friend' that uses your same email address. That will allo
 
 ![Popup, when working](sherrif.png)
 
-![Manage Users](sherrif.png)
+![Manage Users](manage.png)
