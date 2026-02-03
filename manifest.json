@@ -1,31 +1,38 @@
 {
   "manifest_version": 2,
-  "name": "PHP Background Fetch Extension",
-  "version": "1.0.0",
-  "description": "Demo extension that calls a PHP endpoint from the background script to avoid CORS issues.",
+  "name": "Friend Link Sender",
+  "version": "2.0",
+  "description": "Send links to friends via right-click context menu.",
   "permissions": [
-    "http://www.dbooth.net/*",
-    "activeTab"
+    "tabs",
+    "storage",
+    "contextMenus",
+    "notifications",
+    "alarms",
+    "https://api.github.com/*"
   ],
   "background": {
-    "scripts": [
-      "background.js"
-    ],
+    "scripts": ["background.js"],
     "persistent": false
   },
   "browser_action": {
-    "default_title": "PHP Fetch",
-    "default_popup": "popup.html"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "contentScript.js"
-      ],
-      "run_at": "document_idle"
+    "default_popup": "popup.html",
+    "default_title": "Friend Link Sender",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
-  ]
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "friend-link-sender@donandkev.com",
+      "strict_min_version": "91.0"
+    }
+  }
 }
