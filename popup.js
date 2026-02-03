@@ -29,7 +29,6 @@ const saveSettingsBtn = document.getElementById("saveSettings");
 const sendBtn = document.getElementById("sendBtn");
 const statusEl = document.getElementById("status");
 const linksListEl = document.getElementById("linksList");
-const archiveListEl = document.getElementById("archiveList");
 const unreadNoticeEl = document.getElementById("unreadNotice");
 const setupCard = document.getElementById("setupCard");
 const mainContent = document.getElementById("mainContent");
@@ -177,70 +176,44 @@ async function loadLinks() {
 
   if (!myName) {
     linksListEl.innerHTML = "";
-    archiveListEl.innerHTML = "";
     unreadNoticeEl.textContent = "";
     return;
   }
 
   linksListEl.innerHTML = "<li><small class='text-muted'>Loading...</small></li>";
-  archiveListEl.innerHTML = "<li><small class='text-muted'>Loading...</small></li>";
 
   try {
     const data = await fetchGist();
     const links = data.links || [];
 
-    // Filter to links FROM others (sent to me)
-    const linksForMe = links.filter(link =>
-      link.from.toLowerCase() !== myName.toLowerCase()
-    );
-
-    // Separate into unread and read (archived)
-    const unreadLinks = linksForMe.filter(link =>
+    // Filter to unread links FROM others (sent to me)
+    const unreadLinks = links.filter(link =>
+      link.from.toLowerCase() !== myName.toLowerCase() &&
       !link.read?.[myName.toLowerCase()]
     );
-    const archivedLinks = linksForMe.filter(link =>
-      link.read?.[myName.toLowerCase()]
-    );
 
-    // Update unread notice
-    if (unreadLinks.length > 0) {
-      unreadNoticeEl.textContent = `${unreadLinks.length} unread link${unreadLinks.length === 1 ? "" : "s"}`;
-      unreadNoticeEl.className = "small fw-semibold mb-2 text-danger";
-    } else {
-      unreadNoticeEl.textContent = "";
-      unreadNoticeEl.className = "";
-    }
+    // Clear unread notice (not needed with icon showing count)
+    unreadNoticeEl.textContent = "";
+    unreadNoticeEl.className = "";
 
-    // Populate Unread tab
+    // Populate links list with unread links only
     linksListEl.innerHTML = "";
     if (unreadLinks.length === 0) {
       linksListEl.innerHTML = "<li><small class='text-muted'>No unread links</small></li>";
     } else {
       for (const link of unreadLinks.slice(0, 20)) {
-        const li = createLinkElement(link, myName, data, true);
+        const li = createLinkElement(link, myName);
         linksListEl.appendChild(li);
-      }
-    }
-
-    // Populate Archive tab
-    archiveListEl.innerHTML = "";
-    if (archivedLinks.length === 0) {
-      archiveListEl.innerHTML = "<li><small class='text-muted'>No archived links</small></li>";
-    } else {
-      for (const link of archivedLinks.slice(0, 20)) {
-        const li = createLinkElement(link, myName, data, false);
-        archiveListEl.appendChild(li);
       }
     }
   } catch (err) {
     console.error(err);
     linksListEl.innerHTML = "<li><small class='text-danger'>Error loading links</small></li>";
-    archiveListEl.innerHTML = "<li><small class='text-danger'>Error loading links</small></li>";
   }
 }
 
 // ===== Create link element =====
-function createLinkElement(link, myName, data, isUnread) {
+function createLinkElement(link, myName) {
   const li = document.createElement("li");
   li.classList.add("mb-2");
 
@@ -248,21 +221,17 @@ function createLinkElement(link, myName, data, isUnread) {
   a.href = link.url;
   a.textContent = link.title || link.url;
   a.target = "_blank";
-  a.className = "link-item-title d-block" + (isUnread ? " fw-bold text-primary" : "");
+  a.className = "link-item-title d-block fw-bold text-primary";
 
-  // Add click handler to mark as read and move to archive
-  if (isUnread) {
-    a.addEventListener("click", async (e) => {
-      await markLinksAsRead(myName, [link.id], data);
-      // Switch to archive tab
-      const archiveTab = document.getElementById("archive-tab");
-      if (archiveTab) {
-        archiveTab.click();
-      }
-      // Reload links to update both tabs
-      await loadLinks();
-    });
-  }
+  // Add click handler to mark as read
+  a.addEventListener("click", async () => {
+    // Mark as read and wait for it to complete
+    await markLinksAsRead(myName, [link.id]);
+    // Small delay to ensure gist is updated
+    await new Promise(resolve => setTimeout(resolve, 300));
+    // Reload links to remove this link from unread list
+    await loadLinks();
+  });
 
   li.appendChild(a);
 
@@ -294,9 +263,21 @@ async function markLinksAsRead(myName, linkIds, existingData = null) {
 
     if (changed) {
       await updateGist(data);
-      // Update badge
-      const badgeApi = api.browserAction || api.action;
-      badgeApi.setBadgeText({ text: "" });
+
+      // Calculate new unread count and update icon immediately
+      const unreadCount = data.links.filter(link =>
+        link.from.toLowerCase() !== myName.toLowerCase() &&
+        !link.read?.[myName.toLowerCase()]
+      ).length;
+
+      // Send message to background to update icon
+      api.runtime.sendMessage({
+        action: 'updateIcon',
+        count: unreadCount
+      }).catch(() => {
+        // Background script might not be ready, that's okay
+        console.log('Background script not ready for icon update');
+      });
     }
   } catch (err) {
     console.error("Error marking links as read:", err);

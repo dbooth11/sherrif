@@ -9,6 +9,78 @@ const GIST_API = "https://api.github.com/gists";
 // Use browser API (Firefox) with fallback to chrome
 const api = typeof browser !== "undefined" ? browser : chrome;
 
+// ===== Dynamic Icon Generation =====
+function updateIconWithCount(count) {
+  const actionApi = api.browserAction || api.action;
+
+  if (count === 0) {
+    // Show black bookmark icon
+    actionApi.setIcon({
+      path: {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+      }
+    });
+    actionApi.setBadgeText({ text: "" });
+    return;
+  }
+
+  try {
+    // Create canvas for each size
+    const sizes = [16, 48, 128];
+    const imageData = {};
+
+    sizes.forEach(size => {
+      // Use OffscreenCanvas if available, otherwise create a regular canvas
+      const canvas = typeof OffscreenCanvas !== 'undefined'
+        ? new OffscreenCanvas(size, size)
+        : document.createElement('canvas');
+
+      if (canvas.width !== size) {
+        canvas.width = size;
+        canvas.height = size;
+      }
+
+      const ctx = canvas.getContext('2d');
+
+      // Fill with black background
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, size, size);
+
+      // Draw green number
+      ctx.fillStyle = '#00ff00';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Font size based on icon size (90% of icon size for large number)
+      const fontSize = Math.floor(size * 0.9);
+      ctx.font = `bold ${fontSize}px Arial`;
+
+      ctx.fillText(String(count), size / 2, size / 2);
+
+      // Get image data
+      imageData[size] = ctx.getImageData(0, 0, size, size);
+    });
+
+    // Set the icon with generated images
+    actionApi.setIcon({ imageData: imageData });
+    actionApi.setBadgeText({ text: "" });
+  } catch (error) {
+    console.error('Error creating icon:', error);
+    // Fallback to badge
+    actionApi.setIcon({
+      path: {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+      }
+    });
+    actionApi.setBadgeText({ text: String(count) });
+    actionApi.setBadgeBackgroundColor({ color: "#00ff00" });
+  }
+}
+
 // ===== Hardcoded Config =====
 const CONFIG = {
   gistId: "9d43dd466e59858fedc45967d1e9eba9",
@@ -184,18 +256,8 @@ async function checkForNewLinks() {
       !link.read?.[myName.toLowerCase()]
     );
 
-    // Update badge - use browserAction for MV2
-    const badgeApi = api.browserAction || api.action;
-    if (unreadLinks.length > 0) {
-      badgeApi.setBadgeText({ text: String(unreadLinks.length) });
-      badgeApi.setBadgeBackgroundColor({ color: "#000000" });
-      // Try to set text color to green (may not work in all browsers)
-      if (badgeApi.setBadgeTextColor) {
-        badgeApi.setBadgeTextColor({ color: "#00ff00" });
-      }
-    } else {
-      badgeApi.setBadgeText({ text: "" });
-    }
+    // Update icon based on unread count
+    updateIconWithCount(unreadLinks.length);
 
     // Check for new links we haven't seen
     for (const link of links) {
@@ -215,6 +277,14 @@ async function checkForNewLinks() {
     console.error("Error checking for new links:", err);
   }
 }
+
+// ===== Message handler for icon updates =====
+api.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'updateIcon') {
+    updateIconWithCount(message.count);
+    sendResponse({ success: true });
+  }
+});
 
 // ===== Initialize =====
 api.runtime.onStartup.addListener(() => {

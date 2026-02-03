@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Archive</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #00ff00;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 1.1rem;
+    }
+
+    .stats {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin: 30px 0;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      background: #1a1a1a;
+      padding: 15px 25px;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #00ff00;
+    }
+
+    .stat-label {
+      color: #888;
+      font-size: 0.9rem;
+      margin-top: 5px;
+    }
+
+    .filters {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      margin-bottom: 30px;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-group label {
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .filter-group input,
+    .filter-group select {
+      background: #0a0a0a;
+      border: 1px solid #333;
+      color: #e0e0e0;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+      outline: none;
+      border-color: #00ff00;
+    }
+
+    .links-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .link-card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+      transition: all 0.2s;
+    }
+
+    .link-card:hover {
+      border-color: #00ff00;
+      transform: translateY(-2px);
+    }
+
+    .link-card.unread {
+      border-left: 4px solid #00ff00;
+    }
+
+    .link-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .link-title {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .link-title a {
+      color: #00ff00;
+      text-decoration: none;
+      font-size: 1.1rem;
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    .link-title a:hover {
+      text-decoration: underline;
+    }
+
+    .link-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .badge.unread {
+      background: #00ff0020;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+    }
+
+    .badge.read {
+      background: #33333320;
+      color: #888;
+      border: 1px solid #444;
+    }
+
+    .badge.sender {
+      background: #0066ff20;
+      color: #4d9fff;
+      border: 1px solid #0066ff;
+    }
+
+    .link-meta {
+      display: flex;
+      gap: 20px;
+      color: #888;
+      font-size: 0.85rem;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .link-url {
+      color: #666;
+      font-size: 0.85rem;
+      margin-top: 8px;
+      word-break: break-all;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #888;
+      font-size: 1.2rem;
+    }
+
+    .error {
+      background: #ff000020;
+      border: 1px solid #ff0000;
+      color: #ff6666;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #888;
+      font-size: 1.1rem;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .stats {
+        flex-direction: column;
+      }
+
+      .stat {
+        width: 100%;
+      }
+
+      .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .filter-group input,
+      .filter-group select {
+        width: 100%;
+      }
+    }
+
+    .refresh-btn {
+      background: #00ff00;
+      color: #0a0a0a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      background: #00cc00;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📚 Link Archive</h1>
+      <p class="subtitle">Shared links between friends</p>
+    </header>
+
+    <div class="stats" id="stats">
+      <div class="stat">
+        <div class="stat-value" id="totalCount">-</div>
+        <div class="stat-label">Total Links</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="unreadCount">-</div>
+        <div class="stat-label">Unread</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="readCount">-</div>
+        <div class="stat-label">Read</div>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>Search:</label>
+        <input type="text" id="searchInput" placeholder="Search titles or URLs...">
+
+        <label>Filter:</label>
+        <select id="statusFilter">
+          <option value="all">All Links</option>
+          <option value="unread">Unread Only</option>
+          <option value="read">Read Only</option>
+        </select>
+
+        <label>From:</label>
+        <select id="senderFilter">
+          <option value="all">Everyone</option>
+        </select>
+
+        <button class="refresh-btn" onclick="loadLinks()">Refresh</button>
+      </div>
+    </div>
+
+    <div id="linksContainer">
+      <div class="loading">Loading links...</div>
+    </div>
+  </div>
+
+  <script>
+    const GIST_ID = '9d43dd466e59858fedc45967d1e9eba9';
+    const GIST_TOKEN = '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';
+
+    let allLinks = [];
+    let currentUser = 'Don'; // Default viewer
+
+    async function loadLinks() {
+      const container = document.getElementById('linksContainer');
+      container.innerHTML = '<div class="loading">Loading links...</div>';
+
+      try {
+        const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': `Bearer ${GIST_TOKEN}`
+          }
+        });
+
+        if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+
+        const gist = await response.json();
+        const content = gist.files['links.json'].content;
+        const data = JSON.parse(content);
+        allLinks = data.links || [];
+
+        // Populate sender filter
+        const senders = [...new Set(allLinks.map(l => l.from))];
+        const senderFilter = document.getElementById('senderFilter');
+        const currentSender = senderFilter.value;
+        senderFilter.innerHTML = '<option value="all">Everyone</option>' +
+          senders.map(s => `<option value="${s}">${s}</option>`).join('');
+        senderFilter.value = currentSender;
+
+        updateStats();
+        filterLinks();
+      } catch (error) {
+        console.error('Error loading links:', error);
+        container.innerHTML = `<div class="error">Failed to load links: ${error.message}</div>`;
+      }
+    }
+
+    function updateStats() {
+      const unreadCount = allLinks.filter(l => !l.read || Object.keys(l.read).length === 0).length;
+      const readCount = allLinks.length - unreadCount;
+
+      document.getElementById('totalCount').textContent = allLinks.length;
+      document.getElementById('unreadCount').textContent = unreadCount;
+      document.getElementById('readCount').textContent = readCount;
+    }
+
+    function filterLinks() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const statusFilter = document.getElementById('statusFilter').value;
+      const senderFilter = document.getElementById('senderFilter').value;
+
+      let filtered = allLinks;
+
+      // Apply sender filter
+      if (senderFilter !== 'all') {
+        filtered = filtered.filter(l => l.from === senderFilter);
+      }
+
+      // Apply status filter
+      if (statusFilter === 'unread') {
+        filtered = filtered.filter(l => !l.read || Object.keys(l.read).length === 0);
+      } else if (statusFilter === 'read') {
+        filtered = filtered.filter(l => l.read && Object.keys(l.read).length > 0);
+      }
+
+      // Apply search filter
+      if (search) {
+        filtered = filtered.filter(l =>
+          l.title.toLowerCase().includes(search) ||
+          l.url.toLowerCase().includes(search)
+        );
+      }
+
+      renderLinks(filtered);
+    }
+
+    function renderLinks(links) {
+      const container = document.getElementById('linksContainer');
+
+      if (links.length === 0) {
+        container.innerHTML = '<div class="empty">No links found</div>';
+        return;
+      }
+
+      container.innerHTML = links.map(link => {
+        const isUnread = !link.read || Object.keys(link.read).length === 0;
+        const date = new Date(link.ts);
+        const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        const readBy = link.read ? Object.keys(link.read).join(', ') : 'none';
+
+        return `
+          <div class="link-card ${isUnread ? 'unread' : ''}">
+            <div class="link-header">
+              <div class="link-title">
+                <a href="${link.url}" target="_blank" rel="noopener">${link.title}</a>
+              </div>
+              <div class="link-badges">
+                <span class="badge sender">${link.from}</span>
+                <span class="badge ${isUnread ? 'unread' : 'read'}">
+                  ${isUnread ? 'Unread' : 'Read'}
+                </span>
+              </div>
+            </div>
+            <div class="link-meta">
+              <span>📅 ${dateStr}</span>
+              ${!isUnread ? `<span>👁️ Read by: ${readBy}</span>` : ''}
+            </div>
+            <div class="link-url">${link.url}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Event listeners
+    document.getElementById('searchInput').addEventListener('input', filterLinks);
+    document.getElementById('statusFilter').addEventListener('change', filterLinks);
+    document.getElementById('senderFilter').addEventListener('change', filterLinks);
+
+    // Load links on page load
+    loadLinks();
+  </script>
+</body>
+</html>
