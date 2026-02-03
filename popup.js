@@ -7,15 +7,15 @@ const GIST_API = "https://api.github.com/gists";
 // Use browser API (Firefox) with fallback to chrome
 const api = typeof browser !== "undefined" ? browser : chrome;
 
-// Config loaded from storage
-let CONFIG = {
-  gistId: "",
+// Config with hardcoded gist ID
+const CONFIG = {
+  gistId: "63dd9a97e8a2c0cd654de75253a16fbd",
   token: ""
 };
 
 // ===== Storage helpers =====
 async function getSettings() {
-  return api.storage.sync.get(["myName", "friendName", "gistId", "gistToken"]);
+  return api.storage.sync.get(["myName", "friendName", "gistToken"]);
 }
 
 async function saveSettings(settings) {
@@ -24,7 +24,6 @@ async function saveSettings(settings) {
 
 async function loadConfig() {
   const settings = await getSettings();
-  CONFIG.gistId = settings.gistId || "";
   CONFIG.token = settings.gistToken || "";
   return CONFIG;
 }
@@ -32,7 +31,6 @@ async function loadConfig() {
 // ===== DOM elements =====
 const myNameInput = document.getElementById("myName");
 const friendNameInput = document.getElementById("friendName");
-const gistIdInput = document.getElementById("gistId");
 const gistTokenInput = document.getElementById("gistToken");
 const saveSettingsBtn = document.getElementById("saveSettings");
 const sendBtn = document.getElementById("sendBtn");
@@ -93,18 +91,16 @@ async function updateGist(data) {
 
 // ===== Settings logic =====
 async function loadSettingsIntoForm() {
-  const { myName, friendName, gistId, gistToken } = await getSettings();
+  const { myName, friendName, gistToken } = await getSettings();
   if (myName) myNameInput.value = myName;
   if (friendName) friendNameInput.value = friendName;
-  if (gistId) gistIdInput.value = gistId;
   if (gistToken) gistTokenInput.value = gistToken;
-  return { myName, friendName, gistId, gistToken };
+  return { myName, friendName, gistToken };
 }
 
 async function handleSaveSettings() {
   const myName = myNameInput.value.trim();
   const friendName = friendNameInput.value.trim() || "Friend";
-  const gistId = gistIdInput.value.trim();
   const gistToken = gistTokenInput.value.trim();
 
   if (!myName) {
@@ -112,13 +108,13 @@ async function handleSaveSettings() {
     return;
   }
 
-  if (!gistId || !gistToken) {
-    setStatus("Please enter Gist ID and Token", true);
+  if (!gistToken) {
+    setStatus("Please enter GitHub Token", true);
     return;
   }
 
-  await saveSettings({ myName, friendName, gistId, gistToken });
-  await loadConfig(); // Reload config
+  await saveSettings({ myName, friendName, gistToken });
+  await loadConfig(); // Load token into CONFIG
 
   // Update context menu title
   api.contextMenus.update("sendToFriend", {
@@ -163,7 +159,7 @@ async function sendCurrentPage() {
     const data = await fetchGist();
 
     const newLink = {
-      id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       from: myName,
       url: tab.url,
       title: tab.title || tab.url,
@@ -195,7 +191,6 @@ async function loadLinks() {
 
   if (!myName) {
     linksListEl.innerHTML = "";
-    unreadNoticeEl.textContent = "";
     return;
   }
 
@@ -205,22 +200,12 @@ async function loadLinks() {
     const data = await fetchGist();
     const links = data.links || [];
 
-    // Filter to unread links FROM others (sent to me)
-    const unreadLinks = links.filter(link =>
-      link.from.toLowerCase() !== myName.toLowerCase() &&
-      !link.read?.[myName.toLowerCase()]
-    );
-
-    // Clear unread notice (not needed with icon showing count)
-    unreadNoticeEl.textContent = "";
-    unreadNoticeEl.className = "";
-
-    // Populate links list with unread links only
+    // Show all links (limit to 50)
     linksListEl.innerHTML = "";
-    if (unreadLinks.length === 0) {
-      linksListEl.innerHTML = "<li><small class='text-muted'>No unread links</small></li>";
+    if (links.length === 0) {
+      linksListEl.innerHTML = "<li><small class='text-muted'>No links</small></li>";
     } else {
-      for (const link of unreadLinks.slice(0, 20)) {
+      for (const link of links.slice(0, 50)) {
         const li = createLinkElement(link, myName);
         linksListEl.appendChild(li);
       }
@@ -234,32 +219,64 @@ async function loadLinks() {
 // ===== Create link element =====
 function createLinkElement(link, myName) {
   const li = document.createElement("li");
-  li.classList.add("mb-2");
+
+  // Add color coding based on sender
+  const fromLower = link.from.toLowerCase();
+  if (fromLower === "don") {
+    li.classList.add("link-item", "from-don");
+  } else if (fromLower === "kev") {
+    li.classList.add("link-item", "from-kev");
+  } else {
+    li.classList.add("link-item", "from-other");
+  }
+
+  // Check if unread
+  const isUnread = link.from.toLowerCase() !== myName.toLowerCase() &&
+                   !link.read?.[myName.toLowerCase()];
 
   const a = document.createElement("a");
   a.href = link.url;
-  a.textContent = link.title || link.url;
   a.target = "_blank";
-  a.className = "link-item-title d-block fw-bold text-primary";
+  a.className = "link-item-title d-block text-primary";
 
-  // Add click handler to mark as read
-  a.addEventListener("click", async () => {
-    // Mark as read and wait for it to complete
-    await markLinksAsRead(myName, [link.id]);
-    // Small delay to ensure gist is updated
-    await new Promise(resolve => setTimeout(resolve, 300));
-    // Reload links to remove this link from unread list
-    await loadLinks();
-  });
+  // Make unread links bold
+  if (isUnread) {
+    a.classList.add("fw-bold");
+  }
+
+  // Add unread badge if unread
+  if (isUnread) {
+    const badge = document.createElement("span");
+    badge.className = "badge bg-success me-1";
+    badge.textContent = "NEW";
+    badge.style.fontSize = "0.6rem";
+    a.appendChild(badge);
+  }
+
+  const titleText = document.createTextNode(link.title || link.url);
+  a.appendChild(titleText);
+
+  // Add click handler to mark as read if unread
+  if (isUnread) {
+    a.addEventListener("click", async () => {
+      // Mark as read in background
+      await markLinksAsRead(myName, [link.id]);
+
+      // Update UI to show as read
+      a.classList.remove("fw-bold");
+      const badge = a.querySelector(".badge");
+      if (badge) badge.remove();
+    });
+  }
 
   li.appendChild(a);
 
   const meta = document.createElement("div");
-  meta.className = "link-item-meta text-muted";
+  meta.className = "link-item-meta text-muted small";
 
   const date = new Date(link.ts);
   const dateStr = date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  meta.textContent = dateStr;
+  meta.textContent = `From: ${link.from} • ${dateStr}`;
   li.appendChild(meta);
 
   return li;
@@ -305,7 +322,7 @@ async function markLinksAsRead(myName, linkIds, existingData = null) {
 
 // ===== Initialize =====
 document.addEventListener("DOMContentLoaded", async () => {
-  const { myName, friendName, gistId, gistToken } = await loadSettingsIntoForm();
+  const { myName, friendName, gistToken } = await loadSettingsIntoForm();
 
   // Load config from storage
   await loadConfig();
@@ -313,7 +330,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Update send button text
   sendBtn.textContent = `Send to ${friendName || "Friend"}`;
 
-  if (!myName || !gistId || !gistToken) {
+  if (!myName || !gistToken) {
     showSetupUI();
   } else {
     showMainUI();
@@ -328,6 +345,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (e.key === "Enter") handleSaveSettings();
   });
   friendNameInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") handleSaveSettings();
+  });
+  gistTokenInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") handleSaveSettings();
   });
 });

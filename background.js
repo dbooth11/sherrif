@@ -81,15 +81,14 @@ function updateIconWithCount(count) {
   }
 }
 
-// Config loaded from storage
+// Config with hardcoded gist ID
 let CONFIG = {
-  gistId: "",
+  gistId: "63dd9a97e8a2c0cd654de75253a16fbd",
   token: ""
 };
 
 async function loadConfig() {
-  const data = await api.storage.sync.get(["gistId", "gistToken"]);
-  CONFIG.gistId = data.gistId || "";
+  const data = await api.storage.sync.get(["gistToken"]);
   CONFIG.token = data.gistToken || "";
   return CONFIG;
 }
@@ -191,7 +190,7 @@ api.contextMenus.onClicked.addListener(async (info, tab) => {
     const data = await fetchGist();
 
     const newLink = {
-      id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       from: myName,
       url: urlToSend,
       title: title,
@@ -254,10 +253,10 @@ async function checkForNewLinks() {
   if (!myName) return;
 
   // Ensure config is loaded
-  if (!CONFIG.gistId || !CONFIG.token) {
+  if (!CONFIG.token) {
     await loadConfig();
   }
-  if (!CONFIG.gistId || !CONFIG.token) return;
+  if (!CONFIG.token) return;
 
   try {
     const data = await fetchGist();
@@ -308,7 +307,7 @@ api.runtime.onStartup.addListener(() => {
 (async () => {
   try {
     await loadConfig();
-    if (CONFIG.gistId && CONFIG.token) {
+    if (CONFIG.token) {
       const data = await fetchGist();
       lastSeenIds = new Set((data.links || []).map(l => l.id));
     }
