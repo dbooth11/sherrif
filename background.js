@@ -81,11 +81,18 @@ function updateIconWithCount(count) {
   }
 }
 
-// ===== Hardcoded Config =====
-const CONFIG = {
-  gistId: "9d43dd466e59858fedc45967d1e9eba9",
-  token: "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"
+// Config loaded from storage
+let CONFIG = {
+  gistId: "",
+  token: ""
 };
+
+async function loadConfig() {
+  const data = await api.storage.sync.get(["gistId", "gistToken"]);
+  CONFIG.gistId = data.gistId || "";
+  CONFIG.token = data.gistToken || "";
+  return CONFIG;
+}
 
 // ===== Storage helpers =====
 async function getMyName() {
@@ -246,6 +253,12 @@ async function checkForNewLinks() {
   const myName = await getMyName();
   if (!myName) return;
 
+  // Ensure config is loaded
+  if (!CONFIG.gistId || !CONFIG.token) {
+    await loadConfig();
+  }
+  if (!CONFIG.gistId || !CONFIG.token) return;
+
   try {
     const data = await fetchGist();
     const links = data.links || [];
@@ -291,11 +304,14 @@ api.runtime.onStartup.addListener(() => {
   checkForNewLinks();
 });
 
-// Load existing IDs on startup to avoid re-notifying
+// Load config and existing IDs on startup
 (async () => {
   try {
-    const data = await fetchGist();
-    lastSeenIds = new Set((data.links || []).map(l => l.id));
+    await loadConfig();
+    if (CONFIG.gistId && CONFIG.token) {
+      const data = await fetchGist();
+      lastSeenIds = new Set((data.links || []).map(l => l.id));
+    }
   } catch (e) {
     console.log("Initial load failed, will retry on next poll");
   }

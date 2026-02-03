@@ -7,24 +7,33 @@ const GIST_API = "https://api.github.com/gists";
 // Use browser API (Firefox) with fallback to chrome
 const api = typeof browser !== "undefined" ? browser : chrome;
 
-// ===== Hardcoded Config =====
-const CONFIG = {
-  gistId: "9d43dd466e59858fedc45967d1e9eba9",
-  token: "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"
+// Config loaded from storage
+let CONFIG = {
+  gistId: "",
+  token: ""
 };
 
 // ===== Storage helpers =====
-function getSettings() {
-  return api.storage.sync.get(["myName", "friendName"]);
+async function getSettings() {
+  return api.storage.sync.get(["myName", "friendName", "gistId", "gistToken"]);
 }
 
-function saveSettings(settings) {
+async function saveSettings(settings) {
   return api.storage.sync.set(settings);
+}
+
+async function loadConfig() {
+  const settings = await getSettings();
+  CONFIG.gistId = settings.gistId || "";
+  CONFIG.token = settings.gistToken || "";
+  return CONFIG;
 }
 
 // ===== DOM elements =====
 const myNameInput = document.getElementById("myName");
 const friendNameInput = document.getElementById("friendName");
+const gistIdInput = document.getElementById("gistId");
+const gistTokenInput = document.getElementById("gistToken");
 const saveSettingsBtn = document.getElementById("saveSettings");
 const sendBtn = document.getElementById("sendBtn");
 const statusEl = document.getElementById("status");
@@ -84,22 +93,32 @@ async function updateGist(data) {
 
 // ===== Settings logic =====
 async function loadSettingsIntoForm() {
-  const { myName, friendName } = await getSettings();
+  const { myName, friendName, gistId, gistToken } = await getSettings();
   if (myName) myNameInput.value = myName;
   if (friendName) friendNameInput.value = friendName;
-  return { myName, friendName };
+  if (gistId) gistIdInput.value = gistId;
+  if (gistToken) gistTokenInput.value = gistToken;
+  return { myName, friendName, gistId, gistToken };
 }
 
 async function handleSaveSettings() {
   const myName = myNameInput.value.trim();
   const friendName = friendNameInput.value.trim() || "Friend";
+  const gistId = gistIdInput.value.trim();
+  const gistToken = gistTokenInput.value.trim();
 
   if (!myName) {
     setStatus("Please enter your name", true);
     return;
   }
 
-  await saveSettings({ myName, friendName });
+  if (!gistId || !gistToken) {
+    setStatus("Please enter Gist ID and Token", true);
+    return;
+  }
+
+  await saveSettings({ myName, friendName, gistId, gistToken });
+  await loadConfig(); // Reload config
 
   // Update context menu title
   api.contextMenus.update("sendToFriend", {
@@ -286,12 +305,15 @@ async function markLinksAsRead(myName, linkIds, existingData = null) {
 
 // ===== Initialize =====
 document.addEventListener("DOMContentLoaded", async () => {
-  const { myName, friendName } = await loadSettingsIntoForm();
+  const { myName, friendName, gistId, gistToken } = await loadSettingsIntoForm();
+
+  // Load config from storage
+  await loadConfig();
 
   // Update send button text
   sendBtn.textContent = `Send to ${friendName || "Friend"}`;
 
-  if (!myName) {
+  if (!myName || !gistId || !gistToken) {
     showSetupUI();
   } else {
     showMainUI();
