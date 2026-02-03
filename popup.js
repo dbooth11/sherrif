@@ -25,6 +25,7 @@ async function saveSettings(settings) {
 async function loadConfig() {
   const settings = await getSettings();
   CONFIG.token = settings.gistToken || "";
+  console.log("Config loaded. Token present:", !!CONFIG.token);
   return CONFIG;
 }
 
@@ -55,13 +56,26 @@ function getActiveTab() {
 
 // ===== Gist API helpers =====
 async function fetchGist() {
+  if (!CONFIG.token) {
+    throw new Error("No token configured. Please enter your GitHub token in setup.");
+  }
+
   const res = await fetch(`${GIST_API}/${CONFIG.gistId}`, {
     headers: {
       "Accept": "application/vnd.github+json",
       "Authorization": `Bearer ${CONFIG.token}`
     }
   });
-  if (!res.ok) throw new Error(`Failed to fetch gist: ${res.status}`);
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      throw new Error("Invalid token. Please check your GitHub token in setup.");
+    } else if (res.status === 404) {
+      throw new Error("Gist not found. Please verify gist ID.");
+    } else {
+      throw new Error(`GitHub API error: ${res.status} ${res.statusText}`);
+    }
+  }
 
   const gist = await res.json();
   const content = gist.files["links.json"]?.content;
@@ -116,9 +130,12 @@ async function handleSaveSettings() {
   await saveSettings({ myName, friendName, gistToken });
   await loadConfig(); // Load token into CONFIG
 
-  // Update context menu title
-  api.contextMenus.update("sendToFriend", {
-    title: `Send to ${friendName}`
+  // Send message to background to update context menu
+  api.runtime.sendMessage({
+    action: 'updateContextMenu',
+    friendName: friendName
+  }).catch(err => {
+    console.log('Could not update context menu:', err);
   });
 
   setStatus("Saved!");
@@ -177,7 +194,7 @@ async function sendCurrentPage() {
     loadLinks();
   } catch (err) {
     console.error(err);
-    setStatus("Error sending link", true);
+    setStatus(err.message || "Error sending link", true);
   } finally {
     sendBtn.disabled = false;
     const settings = await getSettings();
@@ -212,7 +229,7 @@ async function loadLinks() {
     }
   } catch (err) {
     console.error(err);
-    linksListEl.innerHTML = "<li><small class='text-danger'>Error loading links</small></li>";
+    linksListEl.innerHTML = `<li><small class='text-danger'>${err.message}</small></li>`;
   }
 }
 

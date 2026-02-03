@@ -295,6 +295,15 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'updateIcon') {
     updateIconWithCount(message.count);
     sendResponse({ success: true });
+  } else if (message.action === 'updateContextMenu') {
+    api.contextMenus.update("sendToFriend", {
+      title: `Send to ${message.friendName || "Friend"}`
+    }).then(() => {
+      sendResponse({ success: true });
+    }).catch(err => {
+      sendResponse({ success: false, error: err.message });
+    });
+    return true; // Keep message channel open for async response
   }
 });
 
