@@ -1,15 +1,31 @@
 {
   "manifest_version": 2,
-  "name": "Friend Link Sender",
-  "version": "1.0",
-  "description": "Send the current page to a friend and see your last 6 links.",
+  "name": "PHP Background Fetch Extension",
+  "version": "1.0.0",
+  "description": "Demo extension that calls a PHP endpoint from the background script to avoid CORS issues.",
   "permissions": [
-    "tabs",
-    "storage",
-    "https://yourdomain.com/*"
+    "http://www.dbooth.net/*",
+    "activeTab"
   ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "persistent": false
+  },
   "browser_action": {
-    "default_popup": "popup.html",
-    "default_title": "Friend Link Sender"
-  }
+    "default_title": "PHP Fetch",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "contentScript.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }

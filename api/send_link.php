@@ -1,5 +1,10 @@
 <?php
 require 'config.php';
+header('Content-Type: application/json; charset=utf-8');
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: *");
+header("Referrer-Policy: *");
 $in=readJsonInput();
 $sender=(int)($in['sender_id']??0);
 $receiver=(int)($in['receiver_id']??0);
