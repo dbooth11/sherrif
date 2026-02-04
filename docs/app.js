@@ -109,35 +109,6 @@ function updateStats() {
   document.getElementById('readCount').textContent = readCount;
 }
 
-function filterLinks() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const statusFilter = document.getElementById('statusFilter').value;
-  const senderFilter = document.getElementById('senderFilter').value;
-
-  let filtered = allLinks;
-
-  // Apply sender filter
-  if (senderFilter !== 'all') {
-    filtered = filtered.filter(l => l.from === senderFilter);
-  }
-
-  // Apply status filter
-  if (statusFilter === 'unread') {
-    filtered = filtered.filter(l => !l.read || Object.keys(l.read).length === 0);
-  } else if (statusFilter === 'read') {
-    filtered = filtered.filter(l => l.read && Object.keys(l.read).length > 0);
-  }
-
-  // Apply search filter
-  if (search) {
-    filtered = filtered.filter(l =>
-      l.title.toLowerCase().includes(search) ||
-      l.url.toLowerCase().includes(search)
-    );
-  }
-
-  renderLinks(filtered);
-}
 
 function renderLinks(links) {
   const container = document.getElementById('linksContainer');
