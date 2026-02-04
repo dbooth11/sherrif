@@ -91,6 +91,9 @@ async function loadLinks() {
   }
 }
 
+let sortColumn = 'ts';
+let sortDirection = -1; // -1 = descending, 1 = ascending
+
 function renderLinks(links) {
   const container = document.getElementById('linksContainer');
 
@@ -99,7 +102,7 @@ function renderLinks(links) {
     return;
   }
 
-  container.innerHTML = links.map(link => {
+  const rows = links.map(link => {
     const isUnread = !link.read || Object.keys(link.read).length === 0;
     const date = new Date(link.ts);
     const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {
@@ -107,30 +110,74 @@ function renderLinks(links) {
       minute: '2-digit'
     });
 
-    const readBy = link.read ? Object.keys(link.read).join(', ') : 'none';
-
     return `
-      <div class="link-card ${isUnread ? 'unread' : ''}">
-        <div class="link-header">
-          <div class="link-title">
-            <a href="${link.url}" target="_blank" rel="noopener">${link.title}</a>
-          </div>
-          <div class="link-badges">
-            <span class="badge sender">${link.from}</span>
-            <span class="badge ${isUnread ? 'unread' : 'read'}">
-              ${isUnread ? 'Unread' : 'Read'}
-            </span>
-          </div>
-        </div>
-        <div class="link-meta">
-          <span>📅 ${dateStr}</span>
-          ${!isUnread ? `<span>👁️ Read by: ${readBy}</span>` : ''}
-        </div>
-        <div class="link-url">${link.url}</div>
-      </div>
+      <tr>
+        <td><a href="${link.url}" target="_blank" rel="noopener">${link.title || link.url}</a></td>
+        <td>${link.from}</td>
+        <td>${dateStr}</td>
+        <td><span class="status-badge status-${isUnread ? 'unread' : 'read'}">${isUnread ? 'Unread' : 'Read'}</span></td>
+      </tr>
     `;
   }).join('');
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortLinks('title')">Title</th>
+          <th onclick="sortLinks('from')">From</th>
+          <th onclick="sortLinks('ts')">Date</th>
+          <th onclick="sortLinks('status')">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
+  `;
 }
+
+function sortLinks(column) {
+  // Toggle direction if same column, otherwise reset to descending
+  if (sortColumn === column) {
+    sortDirection *= -1;
+  } else {
+    sortColumn = column;
+    sortDirection = -1;
+  }
+
+  const sorted = [...allLinks].sort((a, b) => {
+    let aVal, bVal;
+
+    switch (column) {
+      case 'title':
+        aVal = (a.title || a.url).toLowerCase();
+        bVal = (b.title || b.url).toLowerCase();
+        break;
+      case 'from':
+        aVal = a.from.toLowerCase();
+        bVal = b.from.toLowerCase();
+        break;
+      case 'ts':
+        aVal = a.ts;
+        bVal = b.ts;
+        break;
+      case 'status':
+        aVal = (!a.read || Object.keys(a.read).length === 0) ? 1 : 0;
+        bVal = (!b.read || Object.keys(b.read).length === 0) ? 1 : 0;
+        break;
+    }
+
+    if (aVal < bVal) return -1 * sortDirection;
+    if (aVal > bVal) return 1 * sortDirection;
+    return 0;
+  });
+
+  renderLinks(sorted);
+}
+
+// Make sortLinks globally accessible for onclick handlers
+window.sortLinks = sortLinks;
 
 // Event listeners - wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {

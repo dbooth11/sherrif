@@ -225,6 +225,74 @@
       font-size: 1.1rem;
     }
 
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th {
+      background: #252525;
+      color: #00ff00;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 2px solid #333;
+    }
+
+    th:hover {
+      background: #2a2a2a;
+    }
+
+    th::after {
+      content: ' ↕';
+      opacity: 0.5;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #2a2a2a;
+      color: #e0e0e0;
+    }
+
+    tr:hover {
+      background: #222;
+    }
+
+    td a {
+      color: #00ff00;
+      text-decoration: none;
+    }
+
+    td a:hover {
+      text-decoration: underline;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .status-unread {
+      background: #00ff0020;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+    }
+
+    .status-read {
+      background: #33333320;
+      color: #888;
+      border: 1px solid #444;
+    }
+
     @media (max-width: 768px) {
       h1 {
         font-size: 2rem;
