@@ -177,19 +177,7 @@ function renderLinks(links) {
 
 // Event listeners - wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    if (confirm('Are you sure you want to logout?')) {
-      clearCredentials();
-      document.getElementById('logoutBtn').style.display = 'none';
-      showLoginForm();
-    }
-  });
 
-  // Show logout button if credentials exist
-  const { gistId, gistToken } = getCredentials();
-  if (gistId && gistToken) {
-    document.getElementById('logoutBtn').style.display = 'inline-block';
-  }
 
   // Load links on page load
   loadLinks();
