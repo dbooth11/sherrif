@@ -39,6 +39,11 @@ const linksListEl = document.getElementById("linksList");
 const unreadNoticeEl = document.getElementById("unreadNotice");
 const setupCard = document.getElementById("setupCard");
 const mainContent = document.getElementById("mainContent");
+const searchInput = document.getElementById("searchInput");
+
+// Store all links for filtering
+let allLinks = [];
+let currentMyName = "";
 
 // ===== Utility functions =====
 function setStatus(msg, isError = false) {
@@ -208,6 +213,7 @@ async function sendCurrentPage() {
 // ===== Load and display links =====
 async function loadLinks() {
   const { myName } = await getSettings();
+  currentMyName = myName;
 
   if (!myName) {
     linksListEl.innerHTML = "";
@@ -218,22 +224,67 @@ async function loadLinks() {
 
   try {
     const data = await fetchGist();
-    const links = data.links || [];
+    allLinks = data.links || [];
 
-    // Show all links (limit to 50)
-    linksListEl.innerHTML = "";
-    if (links.length === 0) {
-      linksListEl.innerHTML = "<li><small class='text-muted'>No links</small></li>";
-    } else {
-      for (const link of links.slice(0, 50)) {
-        const li = createLinkElement(link, myName);
-        linksListEl.appendChild(li);
-      }
-    }
+    // Clear search when loading fresh
+    if (searchInput) searchInput.value = "";
+
+    renderLinks(allLinks);
   } catch (err) {
     console.error(err);
     linksListEl.innerHTML = `<li><small class='text-danger'>${err.message}</small></li>`;
   }
+}
+
+// ===== Render links with sorting =====
+function renderLinks(links) {
+  linksListEl.innerHTML = "";
+
+  // Only show links FROM others (not ones I sent)
+  const myLinks = links.filter(link =>
+    link.from.toLowerCase() !== currentMyName.toLowerCase()
+  );
+
+  if (myLinks.length === 0) {
+    linksListEl.innerHTML = "<li><small class='text-muted'>No links</small></li>";
+    return;
+  }
+
+  // Sort: unread first, then by timestamp descending
+  const sorted = [...myLinks].sort((a, b) => {
+    const aUnread = !a.read?.[currentMyName.toLowerCase()];
+    const bUnread = !b.read?.[currentMyName.toLowerCase()];
+
+    // Unread first
+    if (aUnread && !bUnread) return -1;
+    if (!aUnread && bUnread) return 1;
+
+    // Then by timestamp descending (newest first)
+    return b.ts - a.ts;
+  });
+
+  for (const link of sorted) {
+    const li = createLinkElement(link, currentMyName);
+    linksListEl.appendChild(li);
+  }
+}
+
+// ===== Filter links by search =====
+function filterLinks(query) {
+  if (!query.trim()) {
+    renderLinks(allLinks);
+    return;
+  }
+
+  const q = query.toLowerCase();
+  const filtered = allLinks.filter(link => {
+    const title = (link.title || link.url).toLowerCase();
+    const url = link.url.toLowerCase();
+    const from = link.from.toLowerCase();
+    return title.includes(q) || url.includes(q) || from.includes(q);
+  });
+
+  renderLinks(filtered);
 }
 
 // ===== Create link element =====
@@ -364,4 +415,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   gistTokenInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") handleSaveSettings();
   });
+
+  // Search filter - filter as user types
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      filterLinks(e.target.value);
+    });
+  }
 });
