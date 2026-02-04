@@ -115,7 +115,6 @@ function renderLinks(links) {
         <td><a href="${link.url}" target="_blank" rel="noopener">${link.title || link.url}</a></td>
         <td>${link.from}</td>
         <td>${dateStr}</td>
-        <td><span class="status-badge status-${isUnread ? 'unread' : 'read'}">${isUnread ? 'Unread' : 'Read'}</span></td>
       </tr>
     `;
   }).join('');
@@ -127,11 +126,9 @@ function renderLinks(links) {
           <th onclick="sortLinks('title')">Title</th>
           <th onclick="sortLinks('from')">From</th>
           <th onclick="sortLinks('ts')">Date</th>
-          <th onclick="sortLinks('status')">Status</th>
         </tr>
       </thead>
       <tbody>
-        ${rows}
       </tbody>
     </table>
   `;
@@ -161,10 +158,6 @@ function sortLinks(column) {
       case 'ts':
         aVal = a.ts;
         bVal = b.ts;
-        break;
-      case 'status':
-        aVal = (!a.read || Object.keys(a.read).length === 0) ? 1 : 0;
-        bVal = (!b.read || Object.keys(b.read).length === 0) ? 1 : 0;
         break;
     }
 
