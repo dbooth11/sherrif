@@ -30,8 +30,7 @@ async function loadConfig() {
 }
 
 // ===== DOM elements =====
-const myNameInput = document.getElementById("myName");
-const friendNameInput = document.getElementById("friendName");
+const userSelect = document.getElementById("userSelect");
 const gistTokenInput = document.getElementById("gistToken");
 const saveSettingsBtn = document.getElementById("saveSettings");
 const sendBtn = document.getElementById("sendBtn");
@@ -106,19 +105,19 @@ async function updateGist(data) {
 // ===== Settings logic =====
 async function loadSettingsIntoForm() {
   const { myName, friendName, gistToken } = await getSettings();
-  if (myName) myNameInput.value = myName;
-  if (friendName) friendNameInput.value = friendName;
+  if (myName && friendName) {
+    userSelect.value = `${myName}:${friendName}`;
+  }
   if (gistToken) gistTokenInput.value = gistToken;
   return { myName, friendName, gistToken };
 }
 
 async function handleSaveSettings() {
-  const myName = myNameInput.value.trim();
-  const friendName = friendNameInput.value.trim() || "Friend";
+  const userSelection = userSelect.value;
   const gistToken = gistTokenInput.value.trim();
 
-  if (!myName) {
-    setStatus("Please enter your name", true);
+  if (!userSelection) {
+    setStatus("Please select who you are", true);
     return;
   }
 
@@ -126,6 +125,9 @@ async function handleSaveSettings() {
     setStatus("Please enter GitHub Token", true);
     return;
   }
+
+  // Parse selection: "Don:Kev" -> myName="Don", friendName="Kev"
+  const [myName, friendName] = userSelection.split(':');
 
   await saveSettings({ myName, friendName, gistToken });
   await loadConfig(); // Load token into CONFIG
@@ -357,13 +359,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   saveSettingsBtn.addEventListener("click", handleSaveSettings);
   sendBtn.addEventListener("click", sendCurrentPage);
 
-  // Allow pressing Enter in the name fields
-  myNameInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") handleSaveSettings();
-  });
-  friendNameInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") handleSaveSettings();
-  });
+  // Allow pressing Enter in the token field
   gistTokenInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") handleSaveSettings();
   });

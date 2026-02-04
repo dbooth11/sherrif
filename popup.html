@@ -62,27 +62,19 @@
       <!-- Setup Card (shown first time only) -->
       <div class="card mb-3" id="setupCard">
         <div class="card-body py-3">
-          <h6 class="card-title mb-3">Quick Setup</h6>
+          <h6 class="card-title mb-3">Setup</h6>
 
           <div class="mb-2">
-            <label class="form-label mb-1" for="myName">Your name</label>
-            <input
-              id="myName"
-              type="text"
+            <label class="form-label mb-1" for="userSelect">Who are you?</label>
+            <select
+              id="userSelect"
               class="form-control form-control-sm"
-              placeholder="Don or Kev"
               autofocus
-            />
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label mb-1" for="friendName">Friend's name</label>
-            <input
-              id="friendName"
-              type="text"
-              class="form-control form-control-sm"
-              placeholder="Kev or Don"
-            />
+            >
+              <option value="">-- Select --</option>
+              <option value="Don:Kev">Don → Kev</option>
+              <option value="Kev:Don">Kev → Don</option>
+            </select>
           </div>
 
           <div class="mb-3">
