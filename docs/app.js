@@ -84,31 +84,13 @@ async function loadLinks() {
     const data = JSON.parse(content);
     allLinks = data.links || [];
 
-    // Populate sender filter
-    const senders = [...new Set(allLinks.map(l => l.from))];
-    const senderFilter = document.getElementById('senderFilter');
-    const currentSender = senderFilter.value;
-    senderFilter.innerHTML = '<option value="all">Everyone</option>' +
-      senders.map(s => `<option value="${s}">${s}</option>`).join('');
-    senderFilter.value = currentSender;
-
     updateStats();
-    filterLinks();
+
   } catch (error) {
     console.error('Error loading links:', error);
     container.innerHTML = `<div class="error">Failed to load links: ${error.message}</div>`;
   }
 }
-
-function updateStats() {
-  const unreadCount = allLinks.filter(l => !l.read || Object.keys(l.read).length === 0).length;
-  const readCount = allLinks.length - unreadCount;
-
-  document.getElementById('totalCount').textContent = allLinks.length;
-  document.getElementById('unreadCount').textContent = unreadCount;
-  document.getElementById('readCount').textContent = readCount;
-}
-
 
 function renderLinks(links) {
   const container = document.getElementById('linksContainer');
