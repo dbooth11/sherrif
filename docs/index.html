@@ -341,6 +341,43 @@
       <p class="subtitle">Shared links between friends</p>
     </header>
 
+    <div class="stats" id="stats">
+      <div class="stat">
+        <div class="stat-value" id="totalCount">-</div>
+        <div class="stat-label">Total Links</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="unreadCount">-</div>
+        <div class="stat-label">Unread</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="readCount">-</div>
+        <div class="stat-label">Read</div>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>Search:</label>
+        <input type="text" id="searchInput" placeholder="Search titles or URLs...">
+
+        <label>Filter:</label>
+        <select id="statusFilter">
+          <option value="all">All Links</option>
+          <option value="unread">Unread Only</option>
+          <option value="read">Read Only</option>
+        </select>
+
+        <label>From:</label>
+        <select id="senderFilter">
+          <option value="all">Everyone</option>
+        </select>
+
+        <button class="refresh-btn" id="refreshBtn">Refresh</button>
+        <button class="logout-btn" id="logoutBtn" style="display:none;">Logout</button>
+      </div>
+    </div>
+
     <div id="linksContainer">
       <div class="loading">Loading links...</div>
     </div>
