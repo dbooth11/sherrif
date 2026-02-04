@@ -84,59 +84,11 @@ async function loadLinks() {
     const data = JSON.parse(content);
     allLinks = data.links || [];
 
-    // Populate sender filter
-    const senders = [...new Set(allLinks.map(l => l.from))];
-    const senderFilter = document.getElementById('senderFilter');
-    const currentSender = senderFilter.value;
-    senderFilter.innerHTML = '<option value="all">Everyone</option>' +
-      senders.map(s => `<option value="${s}">${s}</option>`).join('');
-    senderFilter.value = currentSender;
-
-    updateStats();
-    filterLinks();
+    renderLinks(allLinks);
   } catch (error) {
     console.error('Error loading links:', error);
     container.innerHTML = `<div class="error">Failed to load links: ${error.message}</div>`;
   }
-}
-
-function updateStats() {
-  const unreadCount = allLinks.filter(l => !l.read || Object.keys(l.read).length === 0).length;
-  const readCount = allLinks.length - unreadCount;
-
-  document.getElementById('totalCount').textContent = allLinks.length;
-  document.getElementById('unreadCount').textContent = unreadCount;
-  document.getElementById('readCount').textContent = readCount;
-}
-
-function filterLinks() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const statusFilter = document.getElementById('statusFilter').value;
-  const senderFilter = document.getElementById('senderFilter').value;
-
-  let filtered = allLinks;
-
-  // Apply sender filter
-  if (senderFilter !== 'all') {
-    filtered = filtered.filter(l => l.from === senderFilter);
-  }
-
-  // Apply status filter
-  if (statusFilter === 'unread') {
-    filtered = filtered.filter(l => !l.read || Object.keys(l.read).length === 0);
-  } else if (statusFilter === 'read') {
-    filtered = filtered.filter(l => l.read && Object.keys(l.read).length > 0);
-  }
-
-  // Apply search filter
-  if (search) {
-    filtered = filtered.filter(l =>
-      l.title.toLowerCase().includes(search) ||
-      l.url.toLowerCase().includes(search)
-    );
-  }
-
-  renderLinks(filtered);
 }
 
 function renderLinks(links) {
@@ -182,25 +134,6 @@ function renderLinks(links) {
 
 // Event listeners - wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('searchInput').addEventListener('input', filterLinks);
-  document.getElementById('statusFilter').addEventListener('change', filterLinks);
-  document.getElementById('senderFilter').addEventListener('change', filterLinks);
-  document.getElementById('refreshBtn').addEventListener('click', loadLinks);
-
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    if (confirm('Are you sure you want to logout?')) {
-      clearCredentials();
-      document.getElementById('logoutBtn').style.display = 'none';
-      showLoginForm();
-    }
-  });
-
-  // Show logout button if credentials exist
-  const { gistId, gistToken } = getCredentials();
-  if (gistId && gistToken) {
-    document.getElementById('logoutBtn').style.display = 'inline-block';
-  }
-
   // Load links on page load
   loadLinks();
 });
