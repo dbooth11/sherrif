@@ -103,7 +103,6 @@ function renderLinks(links) {
   }
 
   const rows = links.map(link => {
-    const isUnread = !link.read || Object.keys(link.read).length === 0;
     const date = new Date(link.ts);
     const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {
       hour: '2-digit',
@@ -129,6 +128,7 @@ function renderLinks(links) {
         </tr>
       </thead>
       <tbody>
+        ${rows}
       </tbody>
     </table>
   `;
