@@ -170,11 +170,6 @@ function renderLinks(links) {
             </span>
           </div>
         </div>
-        <div class="link-meta">
-          <span>📅 ${dateStr}</span>
-          ${!isUnread ? `<span>👁️ Read by: ${readBy}</span>` : ''}
-        </div>
-        <div class="link-url">${link.url}</div>
       </div>
     `;
   }).join('');
@@ -182,11 +177,6 @@ function renderLinks(links) {
 
 // Event listeners - wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('searchInput').addEventListener('input', filterLinks);
-  document.getElementById('statusFilter').addEventListener('change', filterLinks);
-  document.getElementById('senderFilter').addEventListener('change', filterLinks);
-  document.getElementById('refreshBtn').addEventListener('click', loadLinks);
-
   document.getElementById('logoutBtn').addEventListener('click', () => {
     if (confirm('Are you sure you want to logout?')) {
       clearCredentials();

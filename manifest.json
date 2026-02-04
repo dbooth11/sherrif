@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
-  "name": "Friend Link Sender",
+  "name": "SpitNet",
   "version": "2.0",
-  "description": "Send links to friends via right-click context menu.",
+  "description": "Fucking finally",
   "permissions": [
     "tabs",
     "storage",
@@ -17,7 +17,7 @@
   },
   "browser_action": {
     "default_popup": "popup.html",
-    "default_title": "Friend Link Sender",
+    "default_title": "SpitNet",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
