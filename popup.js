@@ -49,8 +49,9 @@ function setStatus(msg, isError = false) {
   }
 }
 
-function getActiveTab() {
-  return api.tabs.query({ active: true, currentWindow: true }).then(tabs => tabs[0]);
+async function getActiveTab() {
+  const tabs = await api.tabs.query({ active: true, currentWindow: true });
+  return tabs[0];
 }
 
 // ===== Gist API helpers =====

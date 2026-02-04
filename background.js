@@ -11,7 +11,7 @@ const api = typeof browser !== "undefined" ? browser : chrome;
 
 // ===== Dynamic Icon Generation =====
 function updateIconWithCount(count) {
-  const actionApi = api.browserAction || api.action;
+  const actionApi = api.action || api.browserAction;
 
   if (count === 0) {
     // Show black bookmark icon
@@ -32,15 +32,8 @@ function updateIconWithCount(count) {
     const imageData = {};
 
     sizes.forEach(size => {
-      // Use OffscreenCanvas if available, otherwise create a regular canvas
-      const canvas = typeof OffscreenCanvas !== 'undefined'
-        ? new OffscreenCanvas(size, size)
-        : document.createElement('canvas');
-
-      if (canvas.width !== size) {
-        canvas.width = size;
-        canvas.height = size;
-      }
+      // Use OffscreenCanvas (required for service workers in MV3)
+      const canvas = new OffscreenCanvas(size, size);
 
       const ctx = canvas.getContext('2d');
 
