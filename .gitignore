@@ -2,3 +2,7 @@
 node_modules/
 *.log
 config.js
+config.example.js
+server/data/
+server/*.json
+.claude/

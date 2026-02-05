@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Shareff Settings</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 15px;
+        line-height: 1.6;
+        margin: 0;
+        background: #f5f7fa;
+        color: #212529;
+        min-height: 100vh;
+      }
+      a { color: #0d6efd; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+
+      /* Header */
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 24px 0;
+        margin-bottom: 32px;
+      }
+      .header-inner {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+      }
+      .header-subtitle {
+        opacity: 0.9;
+        font-size: 0.95rem;
+        margin-top: 4px;
+      }
+      .header-actions a {
+        color: rgba(255,255,255,0.9);
+        margin-left: 24px;
+      }
+
+      /* Container */
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 24px 48px;
+      }
+
+      /* Cards */
+      .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 24px;
+        overflow: hidden;
+      }
+      .card-header {
+        padding: 16px 24px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #333;
+      }
+      .card-body {
+        padding: 24px;
+      }
+
+      /* Form */
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #495057;
+      }
+      .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 16px;
+      }
+      .form-help {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 6px;
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 24px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+      }
+      .btn-success {
+        background: #198754;
+        color: white;
+      }
+      .btn-success:hover {
+        background: #157347;
+      }
+      .btn-outline {
+        background: white;
+        border: 2px solid #dee2e6;
+        color: #495057;
+      }
+      .btn-outline:hover {
+        background: #f8f9fa;
+        border-color: #adb5bd;
+      }
+      .btn-danger {
+        background: #dc3545;
+        color: white;
+      }
+      .btn-danger:hover {
+        background: #bb2d3b;
+      }
+      .btn-sm {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+      }
+      .btn-lg {
+        padding: 16px 32px;
+        font-size: 1.1rem;
+      }
+
+      /* Grid layout */
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+      @media (max-width: 700px) {
+        .grid-2 { grid-template-columns: 1fr; }
+        .form-row { grid-template-columns: 1fr; }
+      }
+
+      /* Network Diagram */
+      .diagram-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 32px;
+        margin-bottom: 24px;
+      }
+      .diagram-container svg {
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+      }
+
+      /* Info box */
+      .info-box {
+        background: linear-gradient(135deg, #e7f1ff 0%, #cfe2ff 100%);
+        border: 1px solid #b6d4fe;
+        border-radius: 8px;
+        padding: 20px;
+        color: #084298;
+      }
+      .info-box h4 {
+        margin: 0 0 8px 0;
+        font-size: 1rem;
+      }
+      .info-box p {
+        margin: 0;
+        line-height: 1.7;
+      }
+
+      /* List items */
+      .list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
+      .list-item:last-child { margin-bottom: 0; }
+      .list-item-info h4 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .list-item-info p {
+        margin: 4px 0 0;
+        font-size: 0.85rem;
+        color: #6c757d;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 32px;
+        color: #6c757d;
+        background: #f8f9fa;
+        border-radius: 8px;
+      }
+      .empty-state-icon {
+        font-size: 2.5rem;
+        margin-bottom: 8px;
+      }
+
+      /* Role badges */
+      .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+      .role-badge.admin {
+        background: linear-gradient(135deg, #e7f1ff 0%, #cfe2ff 100%);
+        color: #0d6efd;
+      }
+      .role-badge.recipient {
+        background: linear-gradient(135deg, #d1e7dd 0%, #a3cfbb 100%);
+        color: #0f5132;
+      }
+
+      /* Status message */
+      .status-bar {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #198754;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        font-weight: 500;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 1000;
+      }
+      .status-bar.visible { opacity: 1; }
+      .status-bar.error { background: #dc3545; }
+
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s;
+      }
+      .modal-overlay.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+      .modal {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        width: 90%;
+        max-width: 440px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        transform: scale(0.95);
+        transition: transform 0.2s;
+      }
+      .modal-overlay.visible .modal {
+        transform: scale(1);
+      }
+      .modal h3 {
+        margin: 0 0 8px;
+        font-size: 1.25rem;
+      }
+      .modal p {
+        color: #6c757d;
+        margin: 0 0 24px;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+      }
+
+      /* Checkbox list */
+      .checkbox-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 8px;
+      }
+      .checkbox-item {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .checkbox-item:hover {
+        background: #f8f9fa;
+      }
+      .checkbox-item input {
+        width: 18px;
+        height: 18px;
+        margin-right: 12px;
+      }
+
+      /* Sticky save bar */
+      .save-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top: 1px solid #e9ecef;
+        padding: 16px 24px;
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      }
+      .save-bar .btn {
+        min-width: 160px;
+      }
+      body { padding-bottom: 80px; }
+
+      /* Section header */
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .section-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div class="header">
+      <div class="header-inner">
+        <div>
+          <h1>Shareff Settings</h1>
+          <div class="header-subtitle">Configure your link sharing preferences</div>
+        </div>
+        <div class="header-actions">
+          <a href="https://dbooth11.github.io/sherrif/" target="_blank">View Archive</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- How It Works -->
+      <div class="card">
+        <div class="card-body">
+          <h2 style="margin:0 0 16px; font-size:1.25rem;">How Shareff Works</h2>
+
+          <div class="diagram-container">
+            <svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg">
+              <!-- Background regions -->
+              <rect x="250" y="10" width="240" height="200" rx="12" fill="#d4edda" opacity="0.3"/>
+              <rect x="10" y="10" width="180" height="200" rx="12" fill="#f8d7da" opacity="0.3"/>
+
+              <!-- Region labels -->
+              <text x="370" y="35" text-anchor="middle" style="font-size:11px;fill:#155724;font-weight:700">YOU SEND</text>
+              <text x="100" y="35" text-anchor="middle" style="font-size:11px;fill:#721c24;font-weight:700">YOU RECEIVE</text>
+
+              <!-- You (center) -->
+              <circle cx="250" cy="120" r="40" fill="url(#youGradient)"/>
+              <text x="250" y="115" text-anchor="middle" style="font-size:14px;font-weight:700;fill:white">YOU</text>
+              <text x="250" y="132" text-anchor="middle" style="font-size:10px;fill:rgba(255,255,255,0.8)">don@email.com</text>
+
+              <!-- Outgoing: User -->
+              <line x1="290" y1="100" x2="370" y2="70" stroke="#28a745" stroke-width="3" stroke-dasharray="8,4"/>
+              <polygon points="375,65 385,72 372,78" fill="#28a745"/>
+              <circle cx="420" cy="60" r="28" fill="#28a745"/>
+              <text x="420" y="57" text-anchor="middle" style="font-size:12px;font-weight:600;fill:white">Kev</text>
+              <text x="420" y="70" text-anchor="middle" style="font-size:9px;fill:rgba(255,255,255,0.8)">User</text>
+
+              <!-- Outgoing: Group -->
+              <line x1="290" y1="140" x2="370" y2="170" stroke="#fd7e14" stroke-width="3" stroke-dasharray="8,4"/>
+              <polygon points="375,165 385,172 372,178" fill="#fd7e14"/>
+              <circle cx="420" cy="175" r="28" fill="#fd7e14"/>
+              <text x="420" y="172" text-anchor="middle" style="font-size:12px;font-weight:600;fill:white">Science</text>
+              <text x="420" y="185" text-anchor="middle" style="font-size:9px;fill:rgba(255,255,255,0.8)">Group</text>
+
+              <!-- Incoming: Admin -->
+              <line x1="130" y1="120" x2="210" y2="120" stroke="#dc3545" stroke-width="3" stroke-dasharray="8,4"/>
+              <polygon points="205,113 218,120 205,127" fill="#dc3545"/>
+              <circle cx="80" cy="120" r="28" fill="#dc3545"/>
+              <text x="80" y="117" text-anchor="middle" style="font-size:12px;font-weight:600;fill:white">Mike</text>
+              <text x="80" y="130" text-anchor="middle" style="font-size:9px;fill:rgba(255,255,255,0.8)">Admin</text>
+
+              <!-- Gradient -->
+              <defs>
+                <linearGradient id="youGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#667eea"/>
+                  <stop offset="100%" style="stop-color:#764ba2"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+
+          <div class="info-box">
+            <h4>Two-Way Link Sharing</h4>
+            <p>
+              <strong>Share Links (green):</strong> Add users and groups below. Right-click any page to send links to them.<br>
+              <strong>Receive Links (red):</strong> Connect to someone's admin email to receive links they share with you.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Identity -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Your Identity</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="nameInput">Display Name</label>
+              <input id="nameInput" type="text" class="form-control" placeholder="Your name" />
+              <div class="form-help">This is how others will see you</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="emailInput">Email Address</label>
+              <input id="emailInput" type="email" class="form-control" placeholder="you@email.com" />
+              <div class="form-help">Others use this to connect to you</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Share & Receive Grid -->
+      <div class="grid-2">
+        <!-- Share Links -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Share Links</h3>
+            <span class="role-badge admin">Admin Role</span>
+          </div>
+          <div class="card-body">
+            <p style="color:#6c757d;margin:0 0 20px;">Add people you want to share links with. They'll need to install Shareff and connect to your email.</p>
+
+            <!-- Users -->
+            <div class="section-header">
+              <span class="section-title">Users</span>
+              <button id="addUserBtn" class="btn btn-primary btn-sm">+ Add User</button>
+            </div>
+            <div id="usersList"></div>
+
+            <!-- Groups -->
+            <div class="section-header" style="margin-top:24px;">
+              <span class="section-title">Groups</span>
+              <button id="createGroupBtn" class="btn btn-primary btn-sm">+ Create Group</button>
+            </div>
+            <div id="groupsList"></div>
+
+            <button id="inviteBtn" class="btn btn-success" style="width:100%;margin-top:24px;">
+              Invite Friends
+            </button>
+          </div>
+        </div>
+
+        <!-- Receive Links -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Receive Links</h3>
+            <span class="role-badge recipient">Recipient Role</span>
+          </div>
+          <div class="card-body">
+            <p style="color:#6c757d;margin:0 0 20px;">Connect to someone's email to receive links they share. You can also send links back to them.</p>
+
+            <div class="section-header">
+              <span class="section-title">Connected Admin</span>
+              <button id="connectAdminBtn" class="btn btn-primary btn-sm">+ Connect</button>
+            </div>
+            <div id="adminConnection"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Bar -->
+    <div class="save-bar">
+      <button id="cancelSettingsBtn" class="btn btn-outline btn-lg">Cancel</button>
+      <button id="saveSettingsBtn" class="btn btn-primary btn-lg">Save Changes</button>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusBar" class="status-bar"></div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal-overlay">
+      <div class="modal">
+        <h3>Add User</h3>
+        <p>Add someone to your sharing list. They'll need to install Shareff and connect to your email to receive links.</p>
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input id="newUserName" type="text" class="form-control" placeholder="Friend's name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input id="newUserEmail" type="email" class="form-control" placeholder="friend@email.com" />
+        </div>
+        <div class="modal-actions">
+          <button id="cancelAddUser" class="btn btn-outline">Cancel</button>
+          <button id="confirmAddUser" class="btn btn-primary">Add User</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="createGroupModal" class="modal-overlay">
+      <div class="modal">
+        <h3>Create Group</h3>
+        <p>Groups let you send links to multiple people at once.</p>
+        <div class="form-group">
+          <label class="form-label">Group Name</label>
+          <input id="newGroupName" type="text" class="form-control" placeholder="e.g., Science, Sports" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Members</label>
+          <div id="groupMembersCheckboxes" class="checkbox-list"></div>
+        </div>
+        <div class="modal-actions">
+          <button id="cancelCreateGroup" class="btn btn-outline">Cancel</button>
+          <button id="confirmCreateGroup" class="btn btn-primary">Create Group</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Group Modal -->
+    <div id="editGroupModal" class="modal-overlay">
+      <div class="modal">
+        <h3>Edit Group</h3>
+        <input id="editGroupId" type="hidden" />
+        <div class="form-group">
+          <label class="form-label">Group Name</label>
+          <input id="editGroupName" type="text" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Members</label>
+          <div id="editGroupMembersCheckboxes" class="checkbox-list"></div>
+        </div>
+        <div class="modal-actions">
+          <button id="deleteGroup" class="btn btn-danger">Delete Group</button>
+          <button id="cancelEditGroup" class="btn btn-outline">Cancel</button>
+          <button id="confirmEditGroup" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connect Admin Modal -->
+    <div id="connectAdminModal" class="modal-overlay">
+      <div class="modal">
+        <h3>Connect to Admin</h3>
+        <p>Enter the email of someone who uses Shareff. You'll receive links they share with you.</p>
+        <div class="form-group">
+          <label class="form-label">Admin's Email</label>
+          <input id="adminEmailInput" type="email" class="form-control" placeholder="admin@email.com" />
+          <div id="adminLookupStatus" class="form-help"></div>
+        </div>
+        <div class="modal-actions">
+          <button id="cancelConnectAdmin" class="btn btn-outline">Cancel</button>
+          <button id="confirmConnectAdmin" class="btn btn-primary">Connect</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invite Modal -->
+    <div id="inviteModal" class="modal-overlay">
+      <div class="modal">
+        <h3>Invite Friends</h3>
+        <p>Copy this message and send it to friends:</p>
+        <div class="form-group">
+          <textarea id="inviteText" class="form-control" rows="8" readonly style="font-size:13px;"></textarea>
+        </div>
+        <div id="inviteCopyStatus" style="color:#198754;font-weight:500;margin-bottom:8px;"></div>
+        <div class="modal-actions">
+          <button id="cancelInvite" class="btn btn-outline">Close</button>
+          <button id="copyInvite" class="btn btn-primary">Copy to Clipboard</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="settings.js"></script>
+  </body>
+</html>

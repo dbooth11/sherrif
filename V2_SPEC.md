@@ -1,133 +1,428 @@
-# SpitNet v2 Technical Specification
+# Shareff v2 Technical Specification
 
 ## Overview
 
-SpitNet v2 is a browser extension for sharing links between friends/groups using GitHub Gist as a backend.
+Shareff v2 is a browser extension for sharing links with friends. An **admin** creates users and groups, then shares links via context menu. **Recipients** receive links and can send back to the admin.
+
+**Backend:** PHP API with flat file storage
+**API URL:** `https://dbooth.net/server/api.php` (hardcoded)
+**Platforms:** Chrome and Firefox (Manifest V3)
+**Version:** 2.0
 
 ## Core Concepts
 
-### Channels
-A channel is a shared Gist where links are stored. Users can belong to multiple channels.
+### Admin
+A user who shares links with others. Becomes an admin by adding their first user. Each admin has their own namespace (keyed by email).
 
-### Links
-Links are the primary data unit - a URL shared by one user to a channel.
+### Recipient
+A user connected to an admin. Receives links from groups they're in. Can send links back to the admin. **Auto-registered** as a user when they connect to an admin.
 
-### Read State
-Each user tracks their own read state locally. No server-side participation tracking.
+### Groups
+Admin-side organization only. Recipients don't see group names - they just see a merged feed of links from any group they belong to.
+
+### Users
+Admin's pool of known recipients. Can be added manually or auto-added when recipients connect.
+
+**Note:** A person can be both an admin (for their own recipients) AND a recipient (of another admin).
 
 ---
 
-## Data Models
+## Data Model
 
-### Shared Storage (GitHub Gist)
+### Architecture Overview
+
+**Server** (PHP flat files) ↔ **HTTPS API** ↔ **Browser Extension** (chrome.storage.sync)
+
+| Layer | Storage | Data |
+|-------|---------|------|
+| Server | `/data/admins/{email}.json` | users, groups, links |
+| Browser | `chrome.storage.sync` | identity, cached data, readIds |
+
+### Server Storage (Flat Files)
+
+```
+/data/admins/
+  don_at_email_com.json
+  other_at_email_com.json
+```
+
+### Admin File Structure
 
 ```json
 {
+  "email": "don@email.com",
+  "name": "Don",
+  "users": [
+    { "email": "kev@email.com", "name": "Kev" },
+    { "email": "mike@email.com", "name": "Mike" }
+  ],
+  "groups": [
+    {
+      "id": "sci123",
+      "name": "Science",
+      "members": ["kev@email.com"]
+    },
+    {
+      "id": "spo456",
+      "name": "Sports",
+      "members": ["kev@email.com", "mike@email.com"]
+    }
+  ],
   "links": [
     {
       "id": "abc123",
-      "from": "Don",
+      "from": "don@email.com",
+      "fromName": "Don",
       "url": "https://example.com",
-      "title": "Example Page",
-      "ts": 1234567890
+      "title": "Example",
+      "ts": 1234567890,
+      "target": "sci123"
+    },
+    {
+      "id": "def456",
+      "from": "kev@email.com",
+      "fromName": "Kev",
+      "url": "https://example2.com",
+      "title": "Another Example",
+      "ts": 1234567891,
+      "target": "inbox"
     }
   ]
 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| id | string | Unique ID (base36 timestamp + random) |
-| from | string | Sender's display name |
-| url | string | The shared URL |
-| title | string | Page title or URL |
-| ts | number | Unix timestamp (ms) |
+**Link target types:**
+- Group ID (e.g., `"sci123"`) - sent to group members
+- `"inbox"` - sent from recipient to admin
+- User email (e.g., `"kev@email.com"`) - sent to individual
 
-### Local Storage (Browser)
+### Local Storage (Browser - chrome.storage.sync)
 
 ```javascript
 {
   // User identity
   myName: "Don",
+  myEmail: "don@email.com",
 
-  // Configured channels
-  channels: [
-    {
-      id: "gist_id_here",
-      name: "Don & Kev",
-      token: "ghp_..."  // Per-channel token
-    }
+  // Admin mode (if user has added recipients)
+  users: [
+    { email: "kev@email.com", name: "Kev" }
+  ],
+  groups: [
+    { id: "sci123", name: "Science", members: ["kev@email.com"] }
   ],
 
-  // Read tracking (per channel)
-  "readIds_gist_id_here": ["abc123", "xyz789"],
+  // Recipient mode (if connected to an admin)
+  adminEmail: "other@email.com",  // empty string if not a recipient
+  adminName: "Other Person",
 
-  // Last poll timestamp (for notifications)
-  "lastPoll_gist_id_here": 1234567890
+  // Read tracking (local only, max 500 entries)
+  readIds: ["abc123", "xyz789"]
 }
 ```
 
----
-
-## Architecture
-
-### Components
-
-| Component | Purpose |
-|-----------|---------|
-| background.js | Service worker - polling, notifications, context menu |
-| popup.js | UI - channel management, link list, send button |
-| popup.html | Popup UI layout |
-| docs/app.js | Archive website (optional) |
-
-### Data Flow
-
-**Sending a link:**
-1. User right-clicks → "Send to [Channel]"
-2. Fetch current Gist data
-3. Add new link to array (unshift)
-4. PATCH Gist with updated data
-5. Show confirmation notification
-
-**Receiving links:**
-1. Background polls Gist every 30s
-2. Compare link IDs against local `readIds`
-3. Unread = ID not in local set
-4. Update badge count
-5. Show notification for new links
-
-**Marking as read:**
-1. User clicks link in popup
-2. Add link ID to local `readIds` set
-3. Update badge count
-4. No server write needed
+**Storage Limits (chrome.storage.sync):**
+- Total: 102KB
+- Per item: 8KB
+- `readIds` capped at 500 entries to prevent quota overflow
 
 ---
 
-## API
+## User Flows
 
-### GitHub Gist API
+### Admin Setup
+1. Install extension (load from `dist/chrome/` or `dist/firefox/`)
+2. Enter name + email, click Save
+3. Click "+ Add User" → enter recipient's email
+4. Optionally create groups and assign users
+5. Context menu now shows: "Send to [User]", "Send to [Group]"
 
-**Fetch:**
-```
-GET https://api.github.com/gists/{gist_id}
-Authorization: Bearer {token}
-```
+### Recipient Setup
+1. Install extension (from `dist/chrome/` or `dist/firefox/`)
+2. Enter name + email, click Save
+3. Click "+ Connect" → enter admin's email
+4. **Auto-registered** under admin's user list
+5. Context menu now shows: "Send to [Admin Name]"
 
-**Update:**
+### Invite Flow
+1. Admin clicks "Invite Friends" in Settings
+2. Modal shows pre-formatted invite message with:
+   - Extension install link
+   - Setup instructions
+   - Admin's email for connecting
+3. Admin copies and shares via messaging app
+
+### Sending Links (Admin)
+1. Right-click on page → "Shareff" → "Send to [Science]"
+2. Link posted to API under that group
+3. All members of Science group will see it
+
+### Sending Links (Recipient)
+1. Right-click on page → "Shareff" → "Send to Don"
+2. Link posted to admin's inbox
+3. Admin sees it in their feed
+
+### Receiving Links
+1. Extension polls API every 30s
+2. New links trigger notification + badge update
+3. Click link in popup → opens URL, marks as read
+
+---
+
+## API Specification
+
+**Base URL:** `https://dbooth.net/server/api.php`
+
+### Register/Update Admin
+
 ```
-PATCH https://api.github.com/gists/{gist_id}
-Authorization: Bearer {token}
+POST ?action=register
 Content-Type: application/json
 
 {
-  "files": {
-    "links.json": {
-      "content": "{...}"
-    }
-  }
+  "email": "don@email.com",
+  "name": "Don"
 }
+
+→ { "success": true }
 ```
+
+Creates admin file if doesn't exist, updates name if it does.
+
+### Add User to Admin's Pool
+
+```
+POST ?action=addUser
+Content-Type: application/json
+
+{
+  "adminEmail": "don@email.com",
+  "userEmail": "kev@email.com",
+  "userName": "Kev"
+}
+
+→ { "success": true }
+```
+
+Also called automatically when a recipient connects to an admin.
+
+### Remove User from Admin's Pool
+
+```
+POST ?action=removeUser
+Content-Type: application/json
+
+{
+  "adminEmail": "don@email.com",
+  "userEmail": "kev@email.com"
+}
+
+→ { "success": true }
+```
+
+### Create Group
+
+```
+POST ?action=createGroup
+Content-Type: application/json
+
+{
+  "adminEmail": "don@email.com",
+  "groupName": "Science",
+  "members": ["kev@email.com"]
+}
+
+→ { "success": true, "groupId": "sci123" }
+```
+
+### Update Group
+
+```
+POST ?action=updateGroup
+Content-Type: application/json
+
+{
+  "adminEmail": "don@email.com",
+  "groupId": "sci123",
+  "groupName": "Science Updated",
+  "members": ["kev@email.com", "mike@email.com"]
+}
+
+→ { "success": true }
+```
+
+### Delete Group
+
+```
+POST ?action=deleteGroup
+Content-Type: application/json
+
+{
+  "adminEmail": "don@email.com",
+  "groupId": "sci123"
+}
+
+→ { "success": true }
+```
+
+### Send Link
+
+```
+POST ?action=send
+Content-Type: application/json
+
+{
+  "adminEmail": "don@email.com",
+  "from": "don@email.com",
+  "fromName": "Don",
+  "url": "https://example.com",
+  "title": "Example Page",
+  "target": "sci123"
+}
+
+→ { "success": true, "id": "abc123" }
+```
+
+**Target options:**
+- Group ID: sends to group members
+- User email: sends to individual
+- `"inbox"`: recipient sending to admin
+
+### Get Links (Admin)
+
+```
+GET ?action=getLinks&adminEmail=don@email.com
+
+→ {
+    "links": [...],
+    "users": [...],
+    "groups": [...]
+  }
+```
+
+Returns all links, users, and groups for the admin.
+
+### Get Links (Recipient)
+
+```
+GET ?action=getLinks&adminEmail=don@email.com&userEmail=kev@email.com
+
+→ {
+    "links": [...],
+    "adminName": "Don"
+  }
+```
+
+Returns only links where:
+- Target is a group the user belongs to, OR
+- Target is the user's email directly
+
+### Get Admin Info (for recipient setup)
+
+```
+GET ?action=getAdmin&adminEmail=don@email.com
+
+→ {
+    "exists": true,
+    "name": "Don"
+  }
+```
+
+Used when recipient enters admin email to validate and get display name.
+
+---
+
+## Context Menus
+
+### Admin Context Menu
+```
+Shareff →
+  Send to Kev
+  Send to Mike
+  ────────────
+  Send to [Science]
+  Send to [Sports]
+```
+
+### Recipient Context Menu
+```
+Shareff →
+  Send to Don
+```
+
+### Both Roles Context Menu
+If user is both admin and recipient:
+```
+Shareff →
+  Send to Kev          (admin's users)
+  Send to [Science]    (admin's groups)
+  ────────────
+  Send to Other Person (recipient's admin)
+```
+
+---
+
+## Extension UI
+
+### Popup (Links View)
+
+**Header:** Shareff | Archive | Settings
+
+**Search:** Filter input
+
+**Links List:**
+- Each link shows: NEW badge (if unread), title, sender, time
+- Clicking opens URL and marks as read
+- Sorted: unread first, then by time
+
+**Empty States:**
+- Welcome message with "Open Settings" button (first run)
+- "No links yet" with right-click hint
+
+### Settings Page (Full Browser Tab)
+
+Opens in a new browser tab when clicking Settings button.
+
+**Header:** Shareff Settings | View Archive link
+
+**How It Works Section:**
+- SVG network diagram showing sharing flow
+- Green region: "YOU SEND" (users/groups)
+- Red region: "YOU RECEIVE" (admin connection)
+- Info box explaining two-way sharing
+
+**Identity Card:**
+- Name input
+- Email input
+
+**Two-Column Grid:**
+
+| Share Links (Admin) | Receive Links (Recipient) |
+|---------------------|---------------------------|
+| Users list + Add    | Connected admin display   |
+| Groups list + Create| + Connect button          |
+| Invite Friends btn  |                           |
+
+**Sticky Save Bar:** Cancel | Save Changes
+
+**Modals:**
+- Add User (name, email)
+- Create Group (name, member checkboxes)
+- Edit Group (name, members, delete)
+- Connect to Admin (email lookup)
+- Invite Friends (copy-paste message)
+
+### Invite Modal
+
+**Title:** Invite Friends
+
+**Content:** Pre-formatted message with:
+- Friendly intro
+- Extension install link
+- Step-by-step setup instructions
+- Admin's email for connecting
+
+**Actions:** `[Close]` `[Copy to Clipboard]`
 
 ---
 
@@ -135,24 +430,30 @@ Content-Type: application/json
 
 ### Unread Calculation
 ```javascript
+// Admin sees: links from recipients (target = "inbox" or their email)
+// Recipient sees: links from admin to groups they're in
+
 const unreadLinks = links.filter(link =>
-  link.from !== myName &&
   !readIds.includes(link.id)
 );
 ```
 
-### Badge Updates
-- 0 unread: Show default icon
-- 1+ unread: Show green number on black background
+### Icon/Badge Updates
+- 0 unread: Shows 🤓 emoji icon (OffscreenCanvas in service worker)
+- 1+ unread: Shows green number on black background
 
 ### Notifications
-- Only for links from others
-- Only for links not previously seen (tracked by `lastSeenIds` in memory)
+- Only for new links not previously seen
 - Click notification → open link URL
 
-### Link Limit
-- Keep max 100 links in Gist (configurable)
-- Oldest links dropped when limit exceeded
+### Storage Limits
+- Max 100 links per admin (server-side)
+- Max 500 readIds (client-side, auto-trimmed)
+- chrome.storage.sync: 102KB total, 8KB per item
+
+### Polling
+- Every 30 seconds (minimum allowed in Chrome 120+)
+- Alarm recreated on service worker wake-up if missing
 
 ---
 
@@ -168,31 +469,115 @@ const unreadLinks = links.filter(link =>
     "activeTab"
   ],
   "host_permissions": [
-    "https://api.github.com/*"
+    "*://*/*"
   ]
 }
 ```
 
 ---
 
-## Migration from v1
+## File Structure
 
-### Breaking Changes
-- Remove `read` object from link data
-- Move read tracking to local storage
-- Support multiple channels (new)
+```
+/sherrif
+  manifest.json           - Chrome manifest (service_worker)
+  manifest.chrome.json    - Chrome-specific manifest (backup)
+  manifest.firefox.json   - Firefox-specific manifest (scripts)
+  background.js           - Service worker: polling, notifications, context menu
+  popup.html              - Main popup (links view only)
+  popup.js                - Popup logic (links, search)
+  settings.html           - Full-page settings (opens in new tab)
+  settings.js             - Settings page logic
+  icons/                  - Extension icons (16, 48, 128px PNG)
+  V2_SPEC.md             - This specification
+  PLANNING.md            - Roadmap and future work
+  README.md              - User-facing documentation
 
-### Data Migration
-1. On first run, check for v1 data structure
-2. If `read` field exists on links, ignore it
-3. Initialize local `readIds` as empty (all links appear unread once)
+  /dist
+    /chrome               - Chrome build (symlinks to source files)
+      manifest.json       - Symlink to ../manifest.json
+    /firefox              - Firefox build (copies of source files)
+      manifest.json       - Copy of manifest.firefox.json
+
+  /server
+    api.php               - Single API file
+    .htaccess             - Security rules
+    README.md             - Server documentation
+    /data/admins/         - Flat JSON files per admin
+```
+
+### Browser-Specific Builds
+
+**Chrome:** Uses `service_worker` in manifest
+```json
+"background": {
+  "service_worker": "background.js"
+}
+```
+
+**Firefox:** Uses `scripts` in manifest
+```json
+"background": {
+  "scripts": ["background.js"]
+}
+```
 
 ---
 
-## Future Considerations
+## Development
 
-- Link deletion (soft delete with `deleted: true`?)
-- Link previews (fetch metadata on send)
-- Tags/categories
-- Real-time sync (WebSocket/webhook)
-- Export/backup functionality
+### Loading the Extension
+
+**Chrome:**
+1. Go to `chrome://extensions`
+2. Enable "Developer mode"
+3. Click "Load unpacked"
+4. Select `dist/chrome/` folder
+
+**Firefox:**
+1. Go to `about:debugging#/runtime/this-firefox`
+2. Click "Load Temporary Add-on"
+3. Select `dist/firefox/manifest.json`
+
+### After Making Changes
+
+Chrome's symlinks auto-update. For Firefox, copy updated files:
+```bash
+cp popup.js popup.html background.js dist/firefox/
+```
+
+### Testing the API
+
+```bash
+curl "https://dbooth.net/server/api.php?action=getLinks&adminEmail=don@test.com"
+```
+
+---
+
+## Chrome Web Store Publishing
+
+### Unlisted Extension
+1. Go to Chrome Web Store Developer Dashboard
+2. Upload `dist/chrome/` as a zip
+3. Set visibility to "Unlisted"
+4. After approval, update `EXTENSION_URL` in popup.js with the store URL
+
+### Requirements Met
+- [x] Manifest V3
+- [x] Icons: 16, 48, 128px PNG
+- [x] Description provided
+- [x] Permissions documented
+
+---
+
+## Changelog
+
+### v2.0 (Current)
+- Complete rewrite from v1 (GitHub Gist backend)
+- PHP flat-file backend
+- Admin/Recipient model
+- Groups support
+- Invite system
+- Storage quota protection (max 500 readIds)
+- Cross-browser support (Chrome + Firefox)
+- Dynamic icon with OffscreenCanvas
