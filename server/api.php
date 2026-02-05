@@ -1,8 +1,8 @@
 <?php
 /**
- * SpitNet v2 API
+ * Shareff v2 API
  *
- * Flat file storage backend for the SpitNet browser extension.
+ * Flat file storage backend for the Shareff browser extension.
  * Each admin has their own JSON file in /data/admins/
  */
 
@@ -19,6 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 const DATA_DIR = __DIR__ . '/data/admins/';
 const MAX_LINKS = 100;
+const WELCOME_PAGE_URL = 'https://dbooth11.github.io/sherrif/welcome.html';
+const FROM_EMAIL = 'shareff@dbooth.net';
+const FROM_NAME = 'Shareff';
 
 // Ensure data directory exists
 if (!is_dir(DATA_DIR)) {
@@ -57,6 +60,12 @@ try {
             break;
         case 'getAdmin':
             handleGetAdmin();
+            break;
+        case 'sendInvite':
+            handleSendInvite();
+            break;
+        case 'getUserStatus':
+            handleGetUserStatus();
             break;
         default:
             jsonResponse(['error' => 'Unknown action'], 400);
@@ -106,6 +115,7 @@ function handleRegister() {
 
 /**
  * Add a user to admin's pool
+ * If user already exists with status=pending, update to connected and send welcome link
  */
 function handleAddUser() {
     $data = getJsonInput();
@@ -113,6 +123,7 @@ function handleAddUser() {
     $adminEmail = $data['adminEmail'] ?? '';
     $userEmail = $data['userEmail'] ?? '';
     $userName = $data['userName'] ?? '';
+    $status = $data['status'] ?? 'connected'; // Default to connected for backward compat
 
     if (!$adminEmail || !$userEmail || !$userName) {
         jsonResponse(['error' => 'Missing required fields'], 400);
@@ -124,15 +135,48 @@ function handleAddUser() {
     }
 
     // Check if user already exists
-    foreach ($admin['users'] as $user) {
+    $existingIndex = -1;
+    foreach ($admin['users'] as $index => $user) {
         if ($user['email'] === $userEmail) {
-            jsonResponse(['error' => 'User already exists'], 400);
+            $existingIndex = $index;
+            break;
         }
     }
 
+    if ($existingIndex >= 0) {
+        $existingUser = $admin['users'][$existingIndex];
+
+        // If they were pending and are now connecting, update status and send welcome
+        if (isset($existingUser['status']) && $existingUser['status'] === 'pending') {
+            $admin['users'][$existingIndex]['status'] = 'connected';
+            $admin['users'][$existingIndex]['connectedAt'] = time();
+
+            // Send welcome link from admin to new user
+            $welcomeLink = [
+                'id' => generateId(),
+                'from' => $adminEmail,
+                'fromName' => $admin['name'],
+                'url' => WELCOME_PAGE_URL,
+                'title' => 'Welcome to Shareff! Here\'s how it works',
+                'ts' => round(microtime(true) * 1000),
+                'target' => $userEmail
+            ];
+            array_unshift($admin['links'], $welcomeLink);
+
+            saveAdmin($adminEmail, $admin);
+            jsonResponse(['success' => true, 'statusChanged' => true, 'newStatus' => 'connected']);
+        } else {
+            // Already connected, just return success
+            jsonResponse(['success' => true, 'statusChanged' => false]);
+        }
+    }
+
+    // New user - add them
     $admin['users'][] = [
         'email' => $userEmail,
-        'name' => $userName
+        'name' => $userName,
+        'status' => $status,
+        'addedAt' => time()
     ];
 
     saveAdmin($adminEmail, $admin);
@@ -364,10 +408,21 @@ function handleGetLinks() {
             'adminName' => $admin['name']
         ]);
     } else {
-        // Admin view - return everything
+        // Admin view - return everything including user status
+        $usersWithStatus = array_map(function($user) {
+            return [
+                'email' => $user['email'],
+                'name' => $user['name'],
+                'status' => $user['status'] ?? 'connected',
+                'addedAt' => $user['addedAt'] ?? null,
+                'invitedAt' => $user['invitedAt'] ?? null,
+                'connectedAt' => $user['connectedAt'] ?? null
+            ];
+        }, $admin['users']);
+
         jsonResponse([
             'links' => $admin['links'],
-            'users' => $admin['users'],
+            'users' => $usersWithStatus,
             'groups' => $admin['groups']
         ]);
     }
@@ -395,6 +450,140 @@ function handleGetAdmin() {
             'exists' => false
         ]);
     }
+}
+
+/**
+ * Send invite email to a user
+ */
+function handleSendInvite() {
+    $data = getJsonInput();
+
+    $adminEmail = $data['adminEmail'] ?? '';
+    $adminName = $data['adminName'] ?? '';
+    $userEmail = $data['userEmail'] ?? '';
+    $userName = $data['userName'] ?? '';
+    $extensionUrl = $data['extensionUrl'] ?? 'https://chrome.google.com/webstore/detail/shareff/YOUR_EXTENSION_ID';
+
+    if (!$adminEmail || !$userEmail || !$userName) {
+        jsonResponse(['error' => 'Missing required fields'], 400);
+    }
+
+    $admin = loadAdmin($adminEmail);
+    if (!$admin) {
+        jsonResponse(['error' => 'Admin not found'], 404);
+    }
+
+    // Use admin's stored name if not provided
+    if (!$adminName) {
+        $adminName = $admin['name'] ?? 'A friend';
+    }
+
+    // Build email
+    $subject = "$adminName wants to share links with you on Shareff";
+
+    $body = "Hey $userName!\n\n";
+    $body .= "$adminName invited you to Shareff - a simple way to share interesting links while browsing.\n\n";
+    $body .= "Getting started is easy:\n\n";
+    $body .= "1. Install the Shareff extension:\n";
+    $body .= "   $extensionUrl\n\n";
+    $body .= "2. Click the extension icon and enter your name and email\n\n";
+    $body .= "3. Go to Settings and click \"+ Connect\" under \"Receive Links\"\n\n";
+    $body .= "4. Enter this email: $adminEmail\n\n";
+    $body .= "That's it! $adminName can then send you links directly to your browser.\n\n";
+    $body .= "Learn more: " . WELCOME_PAGE_URL . "\n\n";
+    $body .= "- The Shareff Team";
+
+    // HTML version
+    $htmlBody = "
+    <div style='font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+        <h2 style='color: #4CAF50;'>$adminName wants to share links with you!</h2>
+        <p>Hey $userName!</p>
+        <p>$adminName invited you to <strong>Shareff</strong> - a simple way to share interesting links while browsing.</p>
+
+        <div style='background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;'>
+            <h3 style='margin-top: 0;'>Getting started:</h3>
+            <ol style='padding-left: 20px;'>
+                <li style='margin-bottom: 10px;'><strong>Install the extension:</strong><br>
+                    <a href='$extensionUrl' style='color: #4CAF50;'>$extensionUrl</a></li>
+                <li style='margin-bottom: 10px;'><strong>Enter your info:</strong> Click the extension and add your name/email</li>
+                <li style='margin-bottom: 10px;'><strong>Connect:</strong> Go to Settings → \"+ Connect\" under Receive Links</li>
+                <li style='margin-bottom: 10px;'><strong>Enter this email:</strong> <code style='background: #e8e8e8; padding: 2px 6px; border-radius: 4px;'>$adminEmail</code></li>
+            </ol>
+        </div>
+
+        <p>That's it! $adminName can then send you links directly to your browser.</p>
+
+        <p style='margin-top: 30px;'>
+            <a href='" . WELCOME_PAGE_URL . "' style='background: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;'>Learn More About Shareff</a>
+        </p>
+
+        <p style='color: #999; font-size: 12px; margin-top: 30px;'>
+            This invite was sent by $adminName ($adminEmail) via Shareff.
+        </p>
+    </div>
+    ";
+
+    // Email headers
+    $headers = [
+        'From' => FROM_NAME . ' <' . FROM_EMAIL . '>',
+        'Reply-To' => $adminEmail,
+        'MIME-Version' => '1.0',
+        'Content-Type' => 'text/html; charset=UTF-8',
+        'X-Mailer' => 'Shareff/2.0'
+    ];
+
+    $headerString = '';
+    foreach ($headers as $key => $value) {
+        $headerString .= "$key: $value\r\n";
+    }
+
+    // Send email
+    $sent = mail($userEmail, $subject, $htmlBody, $headerString);
+
+    if ($sent) {
+        // Update user status to invited
+        foreach ($admin['users'] as &$user) {
+            if ($user['email'] === $userEmail) {
+                $user['invitedAt'] = time();
+                break;
+            }
+        }
+        saveAdmin($adminEmail, $admin);
+
+        jsonResponse(['success' => true, 'message' => 'Invite sent']);
+    } else {
+        jsonResponse(['error' => 'Failed to send email'], 500);
+    }
+}
+
+/**
+ * Get status of users for an admin
+ */
+function handleGetUserStatus() {
+    $adminEmail = $_GET['adminEmail'] ?? '';
+
+    if (!$adminEmail) {
+        jsonResponse(['error' => 'Missing adminEmail'], 400);
+    }
+
+    $admin = loadAdmin($adminEmail);
+    if (!$admin) {
+        jsonResponse(['error' => 'Admin not found'], 404);
+    }
+
+    $userStatuses = [];
+    foreach ($admin['users'] as $user) {
+        $userStatuses[] = [
+            'email' => $user['email'],
+            'name' => $user['name'],
+            'status' => $user['status'] ?? 'connected',
+            'addedAt' => $user['addedAt'] ?? null,
+            'invitedAt' => $user['invitedAt'] ?? null,
+            'connectedAt' => $user['connectedAt'] ?? null
+        ];
+    }
+
+    jsonResponse(['users' => $userStatuses]);
 }
 
 // ============ Helpers ============

@@ -353,6 +353,32 @@
         margin-right: 12px;
       }
 
+      /* Status badges */
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .status-badge.pending {
+        background: #fff3cd;
+        color: #856404;
+      }
+      .status-badge.connected {
+        background: #d1e7dd;
+        color: #0f5132;
+      }
+      .list-item-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
       /* Sticky save bar */
       .save-bar {
         position: fixed;
@@ -408,58 +434,9 @@
         <div class="card-body">
           <h2 style="margin:0 0 16px; font-size:1.25rem;">How Shareff Works</h2>
 
-          <div class="diagram-container">
-            <svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg">
-              <!-- Background regions -->
-              <rect x="250" y="10" width="240" height="200" rx="12" fill="#d4edda" opacity="0.3"/>
-              <rect x="10" y="10" width="180" height="200" rx="12" fill="#f8d7da" opacity="0.3"/>
 
-              <!-- Region labels -->
-              <text x="370" y="35" text-anchor="middle" style="font-size:11px;fill:#155724;font-weight:700">YOU SEND</text>
-              <text x="100" y="35" text-anchor="middle" style="font-size:11px;fill:#721c24;font-weight:700">YOU RECEIVE</text>
+Shareff is a very informal way to send links to a friend or group of friends while staying in the browser.
 
-              <!-- You (center) -->
-              <circle cx="250" cy="120" r="40" fill="url(#youGradient)"/>
-              <text x="250" y="115" text-anchor="middle" style="font-size:14px;font-weight:700;fill:white">YOU</text>
-              <text x="250" y="132" text-anchor="middle" style="font-size:10px;fill:rgba(255,255,255,0.8)">don@email.com</text>
-
-              <!-- Outgoing: User -->
-              <line x1="290" y1="100" x2="370" y2="70" stroke="#28a745" stroke-width="3" stroke-dasharray="8,4"/>
-              <polygon points="375,65 385,72 372,78" fill="#28a745"/>
-              <circle cx="420" cy="60" r="28" fill="#28a745"/>
-              <text x="420" y="57" text-anchor="middle" style="font-size:12px;font-weight:600;fill:white">Kev</text>
-              <text x="420" y="70" text-anchor="middle" style="font-size:9px;fill:rgba(255,255,255,0.8)">User</text>
-
-              <!-- Outgoing: Group -->
-              <line x1="290" y1="140" x2="370" y2="170" stroke="#fd7e14" stroke-width="3" stroke-dasharray="8,4"/>
-              <polygon points="375,165 385,172 372,178" fill="#fd7e14"/>
-              <circle cx="420" cy="175" r="28" fill="#fd7e14"/>
-              <text x="420" y="172" text-anchor="middle" style="font-size:12px;font-weight:600;fill:white">Science</text>
-              <text x="420" y="185" text-anchor="middle" style="font-size:9px;fill:rgba(255,255,255,0.8)">Group</text>
-
-              <!-- Incoming: Admin -->
-              <line x1="130" y1="120" x2="210" y2="120" stroke="#dc3545" stroke-width="3" stroke-dasharray="8,4"/>
-              <polygon points="205,113 218,120 205,127" fill="#dc3545"/>
-              <circle cx="80" cy="120" r="28" fill="#dc3545"/>
-              <text x="80" y="117" text-anchor="middle" style="font-size:12px;font-weight:600;fill:white">Mike</text>
-              <text x="80" y="130" text-anchor="middle" style="font-size:9px;fill:rgba(255,255,255,0.8)">Admin</text>
-
-              <!-- Gradient -->
-              <defs>
-                <linearGradient id="youGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" style="stop-color:#667eea"/>
-                  <stop offset="100%" style="stop-color:#764ba2"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-
-          <div class="info-box">
-            <h4>Two-Way Link Sharing</h4>
-            <p>
-              <strong>Share Links (green):</strong> Add users and groups below. Right-click any page to send links to them.<br>
-              <strong>Receive Links (red):</strong> Connect to someone's admin email to receive links they share with you.
-            </p>
           </div>
         </div>
       </div>
@@ -494,12 +471,12 @@
             <span class="role-badge admin">Admin Role</span>
           </div>
           <div class="card-body">
-            <p style="color:#6c757d;margin:0 0 20px;">Add people you want to share links with. They'll need to install Shareff and connect to your email.</p>
+            <p style="color:#6c757d;margin:0 0 20px;">Add friends to share links with. They'll receive an email invite with setup instructions.</p>
 
             <!-- Users -->
             <div class="section-header">
               <span class="section-title">Users</span>
-              <button id="addUserBtn" class="btn btn-primary btn-sm">+ Add User</button>
+              <button id="addUserBtn" class="btn btn-primary btn-sm">+ Invite User</button>
             </div>
             <div id="usersList"></div>
 
@@ -509,10 +486,6 @@
               <button id="createGroupBtn" class="btn btn-primary btn-sm">+ Create Group</button>
             </div>
             <div id="groupsList"></div>
-
-            <button id="inviteBtn" class="btn btn-success" style="width:100%;margin-top:24px;">
-              Invite Friends
-            </button>
           </div>
         </div>
 
@@ -544,22 +517,24 @@
     <!-- Status Bar -->
     <div id="statusBar" class="status-bar"></div>
 
-    <!-- Add User Modal -->
+    <!-- Add User Modal (Unified Add + Invite) -->
     <div id="addUserModal" class="modal-overlay">
       <div class="modal">
-        <h3>Add User</h3>
-        <p>Add someone to your sharing list. They'll need to install Shareff and connect to your email to receive links.</p>
+        <h3>Invite a Friend</h3>
+        <p>Enter your friend's info. They'll receive an email with instructions to install Shareff and connect to you.</p>
         <div class="form-group">
-          <label class="form-label">Name</label>
-          <input id="newUserName" type="text" class="form-control" placeholder="Friend's name" />
+          <label class="form-label">Friend's Name</label>
+          <input id="newUserName" type="text" class="form-control" placeholder="e.g., Kevin" />
         </div>
         <div class="form-group">
-          <label class="form-label">Email</label>
+          <label class="form-label">Friend's Email</label>
           <input id="newUserEmail" type="email" class="form-control" placeholder="friend@email.com" />
+          <div class="form-help">We'll send them an invite email with setup instructions</div>
         </div>
+        <div id="inviteStatus" style="margin-top:12px;"></div>
         <div class="modal-actions">
           <button id="cancelAddUser" class="btn btn-outline">Cancel</button>
-          <button id="confirmAddUser" class="btn btn-primary">Add User</button>
+          <button id="confirmAddUser" class="btn btn-primary">Send Invite</button>
         </div>
       </div>
     </div>
@@ -622,18 +597,16 @@
       </div>
     </div>
 
-    <!-- Invite Modal -->
-    <div id="inviteModal" class="modal-overlay">
+    <!-- Resend Invite Modal -->
+    <div id="resendInviteModal" class="modal-overlay">
       <div class="modal">
-        <h3>Invite Friends</h3>
-        <p>Copy this message and send it to friends:</p>
-        <div class="form-group">
-          <textarea id="inviteText" class="form-control" rows="8" readonly style="font-size:13px;"></textarea>
-        </div>
-        <div id="inviteCopyStatus" style="color:#198754;font-weight:500;margin-bottom:8px;"></div>
+        <h3>Resend Invite</h3>
+        <p>Send another invite email to <strong id="resendUserName"></strong>?</p>
+        <input id="resendUserEmail" type="hidden" />
+        <div id="resendStatus" style="margin-top:12px;"></div>
         <div class="modal-actions">
-          <button id="cancelInvite" class="btn btn-outline">Close</button>
-          <button id="copyInvite" class="btn btn-primary">Copy to Clipboard</button>
+          <button id="cancelResend" class="btn btn-outline">Cancel</button>
+          <button id="confirmResend" class="btn btn-primary">Resend Invite</button>
         </div>
       </div>
     </div>

@@ -12,6 +12,9 @@ const MAX_READ_IDS = 500;
 // Chrome Web Store unlisted extension URL (update this after publishing)
 const EXTENSION_URL = "https://chrome.google.com/webstore/detail/shareff/YOUR_EXTENSION_ID";
 
+// Welcome page URL
+const WELCOME_PAGE_URL = "https://dbooth11.github.io/sherrif/welcome.html";
+
 // ===== State =====
 let state = {
   myName: "",
@@ -38,15 +41,15 @@ const elements = {
   addUserBtn: $("addUserBtn"),
   createGroupBtn: $("createGroupBtn"),
   connectAdminBtn: $("connectAdminBtn"),
-  inviteBtn: $("inviteBtn"),
   saveSettingsBtn: $("saveSettingsBtn"),
   cancelSettingsBtn: $("cancelSettingsBtn"),
   // Status
   statusBar: $("statusBar"),
-  // Add User Modal
+  // Add User Modal (Unified Add + Invite)
   addUserModal: $("addUserModal"),
   newUserName: $("newUserName"),
   newUserEmail: $("newUserEmail"),
+  inviteStatus: $("inviteStatus"),
   confirmAddUser: $("confirmAddUser"),
   cancelAddUser: $("cancelAddUser"),
   // Create Group Modal
@@ -69,12 +72,13 @@ const elements = {
   adminLookupStatus: $("adminLookupStatus"),
   confirmConnectAdmin: $("confirmConnectAdmin"),
   cancelConnectAdmin: $("cancelConnectAdmin"),
-  // Invite Modal
-  inviteModal: $("inviteModal"),
-  inviteText: $("inviteText"),
-  inviteCopyStatus: $("inviteCopyStatus"),
-  cancelInvite: $("cancelInvite"),
-  copyInvite: $("copyInvite")
+  // Resend Invite Modal
+  resendInviteModal: $("resendInviteModal"),
+  resendUserName: $("resendUserName"),
+  resendUserEmail: $("resendUserEmail"),
+  resendStatus: $("resendStatus"),
+  cancelResend: $("cancelResend"),
+  confirmResend: $("confirmResend")
 };
 
 // ===== Storage =====
@@ -183,25 +187,42 @@ function renderUsersList() {
     elements.usersList.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">👥</div>
-        <div>No users added yet</div>
+        <div>No users invited yet</div>
+        <div style="font-size:0.85rem;margin-top:8px;">Click "+ Invite User" to add friends</div>
       </div>
     `;
     return;
   }
 
-  elements.usersList.innerHTML = state.users.map(user => `
-    <div class="list-item">
-      <div class="list-item-info">
-        <h4>${escapeHtml(user.name)}</h4>
-        <p>${escapeHtml(user.email)}</p>
+  elements.usersList.innerHTML = state.users.map(user => {
+    const status = user.status || 'connected';
+    const isPending = status === 'pending';
+    const statusBadge = isPending
+      ? '<span class="status-badge pending">Pending</span>'
+      : '<span class="status-badge connected">Connected</span>';
+
+    return `
+      <div class="list-item">
+        <div class="list-item-info">
+          <h4>${escapeHtml(user.name)} ${statusBadge}</h4>
+          <p>${escapeHtml(user.email)}</p>
+        </div>
+        <div class="list-item-actions">
+          ${isPending ? `<button class="btn btn-outline btn-sm" data-resend-user="${user.email}" data-resend-name="${escapeHtml(user.name)}">Resend</button>` : ''}
+          <button class="btn btn-danger btn-sm" data-remove-user="${user.email}">Remove</button>
+        </div>
       </div>
-      <button class="btn btn-danger btn-sm" data-remove-user="${user.email}">Remove</button>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 
   // Add remove handlers
   elements.usersList.querySelectorAll("[data-remove-user]").forEach(btn => {
     btn.addEventListener("click", () => removeUser(btn.dataset.removeUser));
+  });
+
+  // Add resend handlers
+  elements.usersList.querySelectorAll("[data-resend-user]").forEach(btn => {
+    btn.addEventListener("click", () => openResendModal(btn.dataset.resendUser, btn.dataset.resendName));
   });
 }
 
@@ -264,6 +285,8 @@ function renderAdminConnection() {
 function openAddUserModal() {
   elements.newUserName.value = "";
   elements.newUserEmail.value = "";
+  elements.inviteStatus.innerHTML = "";
+  elements.confirmAddUser.disabled = false;
   showModal(elements.addUserModal);
   elements.newUserName.focus();
 }
@@ -277,30 +300,55 @@ async function addUser() {
     return;
   }
 
-  if (state.users.some(u => u.email === email)) {
-    alert("User already exists");
+  if (!state.myEmail || !state.myName) {
+    alert("Please save your name and email first (in the Identity section above)");
     return;
   }
 
-  try {
-    if (state.myEmail) {
-      await apiCall("register", { email: state.myEmail, name: state.myName }, "POST");
-      await apiCall("addUser", {
-        adminEmail: state.myEmail,
-        userEmail: email,
-        userName: name
-      }, "POST");
-    }
+  if (state.users.some(u => u.email === email)) {
+    alert("User already exists in your list");
+    return;
+  }
 
-    state.users.push({ email, name });
+  // Show sending status
+  elements.inviteStatus.innerHTML = '<span style="color:#6c757d;">Sending invite...</span>';
+  elements.confirmAddUser.disabled = true;
+
+  try {
+    // Register admin first
+    await apiCall("register", { email: state.myEmail, name: state.myName }, "POST");
+
+    // Add user with pending status
+    await apiCall("addUser", {
+      adminEmail: state.myEmail,
+      userEmail: email,
+      userName: name,
+      status: "pending"
+    }, "POST");
+
+    // Send invite email
+    await apiCall("sendInvite", {
+      adminEmail: state.myEmail,
+      adminName: state.myName,
+      userEmail: email,
+      userName: name,
+      extensionUrl: EXTENSION_URL
+    }, "POST");
+
+    // Add to local state
+    state.users.push({ email, name, status: "pending" });
     await saveState();
     renderUsersList();
+
+    elements.inviteStatus.innerHTML = '';
     hideModal(elements.addUserModal);
-    showStatus("User added!");
+    showStatus("Invite sent to " + name + "!");
 
     api.runtime.sendMessage({ action: "settingsChanged" }).catch(() => {});
   } catch (err) {
-    alert("Error adding user: " + err.message);
+    elements.inviteStatus.innerHTML = `<span style="color:#dc3545;">Error: ${err.message}</span>`;
+  } finally {
+    elements.confirmAddUser.disabled = false;
   }
 }
 
@@ -563,13 +611,14 @@ async function saveSettings() {
       console.log("No existing server data:", e);
     }
 
-    // Sync users to server
+    // Sync users to server (preserve their status)
     for (const user of state.users) {
       try {
         await apiCall("addUser", {
           adminEmail: email,
           userEmail: user.email,
-          userName: user.name
+          userName: user.name,
+          status: user.status || "connected"
         }, "POST");
       } catch (e) {
         // User might already exist
@@ -620,47 +669,38 @@ function cancelSettings() {
   window.close();
 }
 
-// ===== Invite System =====
-function openInviteModal() {
-  if (!state.myName || !state.myEmail) {
-    alert("Please save your name and email first");
-    return;
-  }
-
-  const inviteMessage = `Hey! I'm using Shareff to share links with friends.
-
-Install the extension:
-${EXTENSION_URL}
-
-After installing:
-1. Open the extension and enter your name and email
-2. Go to Settings
-3. Click "+ Connect" under "Receive Links"
-4. Enter my email: ${state.myEmail}
-
-That's it! I can then send you links directly.
-
-- ${state.myName}`;
-
-  elements.inviteText.value = inviteMessage;
-  elements.inviteCopyStatus.textContent = "";
-  showModal(elements.inviteModal);
+// ===== Resend Invite System =====
+function openResendModal(email, name) {
+  elements.resendUserEmail.value = email;
+  elements.resendUserName.textContent = name;
+  elements.resendStatus.innerHTML = '';
+  showModal(elements.resendInviteModal);
 }
 
-async function copyInviteText() {
+async function resendInvite() {
+  const email = elements.resendUserEmail.value;
+  const user = state.users.find(u => u.email === email);
+  if (!user) return;
+
+  elements.resendStatus.innerHTML = '<span style="color:#6c757d;">Sending...</span>';
+  elements.confirmResend.disabled = true;
+
   try {
-    await navigator.clipboard.writeText(elements.inviteText.value);
-    elements.inviteCopyStatus.textContent = "Copied to clipboard!";
-    setTimeout(() => {
-      elements.inviteCopyStatus.textContent = "";
-    }, 2000);
+    await apiCall("sendInvite", {
+      adminEmail: state.myEmail,
+      adminName: state.myName,
+      userEmail: email,
+      userName: user.name,
+      extensionUrl: EXTENSION_URL
+    }, "POST");
+
+    elements.resendStatus.innerHTML = '';
+    hideModal(elements.resendInviteModal);
+    showStatus("Invite resent to " + user.name + "!");
   } catch (err) {
-    elements.inviteText.select();
-    document.execCommand("copy");
-    elements.inviteCopyStatus.textContent = "Copied!";
-    setTimeout(() => {
-      elements.inviteCopyStatus.textContent = "";
-    }, 2000);
+    elements.resendStatus.innerHTML = `<span style="color:#dc3545;">Error: ${err.message}</span>`;
+  } finally {
+    elements.confirmResend.disabled = false;
   }
 }
 
@@ -712,10 +752,9 @@ function setupEventListeners() {
     if (e.key === "Enter") connectToAdmin();
   });
 
-  // Invite
-  elements.inviteBtn.addEventListener("click", openInviteModal);
-  elements.copyInvite.addEventListener("click", copyInviteText);
-  elements.cancelInvite.addEventListener("click", () => hideModal(elements.inviteModal));
+  // Resend Invite
+  elements.confirmResend.addEventListener("click", resendInvite);
+  elements.cancelResend.addEventListener("click", () => hideModal(elements.resendInviteModal));
 
   // Close modals on overlay click
   document.querySelectorAll(".modal-overlay").forEach(overlay => {

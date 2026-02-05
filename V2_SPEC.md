@@ -21,7 +21,9 @@ A user connected to an admin. Receives links from groups they're in. Can send li
 Admin-side organization only. Recipients don't see group names - they just see a merged feed of links from any group they belong to.
 
 ### Users
-Admin's pool of known recipients. Can be added manually or auto-added when recipients connect.
+Admin's pool of known recipients. Each user has a **status**:
+- `pending` - Invited but not yet connected
+- `connected` - Has installed extension and connected
 
 **Note:** A person can be both an admin (for their own recipients) AND a recipient (of another admin).
 
@@ -53,8 +55,21 @@ Admin's pool of known recipients. Can be added manually or auto-added when recip
   "email": "don@email.com",
   "name": "Don",
   "users": [
-    { "email": "kev@email.com", "name": "Kev" },
-    { "email": "mike@email.com", "name": "Mike" }
+    {
+      "email": "kev@email.com",
+      "name": "Kev",
+      "status": "connected",
+      "addedAt": 1234567890,
+      "invitedAt": 1234567890,
+      "connectedAt": 1234567891
+    },
+    {
+      "email": "mike@email.com",
+      "name": "Mike",
+      "status": "pending",
+      "addedAt": 1234567892,
+      "invitedAt": 1234567892
+    }
   ],
   "groups": [
     {
@@ -106,7 +121,8 @@ Admin's pool of known recipients. Can be added manually or auto-added when recip
 
   // Admin mode (if user has added recipients)
   users: [
-    { email: "kev@email.com", name: "Kev" }
+    { email: "kev@email.com", name: "Kev", status: "connected" },
+    { email: "mike@email.com", name: "Mike", status: "pending" }
   ],
   groups: [
     { id: "sci123", name: "Science", members: ["kev@email.com"] }
@@ -133,24 +149,33 @@ Admin's pool of known recipients. Can be added manually or auto-added when recip
 ### Admin Setup
 1. Install extension (load from `dist/chrome/` or `dist/firefox/`)
 2. Enter name + email, click Save
-3. Click "+ Add User" → enter recipient's email
-4. Optionally create groups and assign users
-5. Context menu now shows: "Send to [User]", "Send to [Group]"
+3. Click "+ Invite User" → enter recipient's name and email
+4. **Email sent automatically** with install instructions
+5. User appears in list with "Pending" status
+6. Optionally create groups and assign users
+7. Context menu now shows: "Send to [User]", "Send to [Group]"
 
 ### Recipient Setup
-1. Install extension (from `dist/chrome/` or `dist/firefox/`)
-2. Enter name + email, click Save
-3. Click "+ Connect" → enter admin's email
-4. **Auto-registered** under admin's user list
-5. Context menu now shows: "Send to [Admin Name]"
+1. Receive invite email from admin
+2. Click extension install link
+3. Enter name + email, click Save
+4. Click "+ Connect" → enter admin's email (provided in invite)
+5. **Auto-registered** under admin's user list, status changes to "Connected"
+6. **Welcome link automatically sent** to recipient's feed
+7. Context menu now shows: "Send to [Admin Name]"
 
-### Invite Flow
-1. Admin clicks "Invite Friends" in Settings
-2. Modal shows pre-formatted invite message with:
-   - Extension install link
-   - Setup instructions
-   - Admin's email for connecting
-3. Admin copies and shares via messaging app
+### Invite Flow (Unified Add + Invite)
+1. Admin clicks "+ Invite User" in Settings
+2. Modal prompts for friend's name and email
+3. On submit:
+   - User added to admin's list with `status: "pending"`
+   - Invite email sent via PHP `mail()` with:
+     - Extension install link
+     - Step-by-step setup instructions
+     - Admin's email for connecting
+4. Admin sees user in list with "Pending" badge
+5. "Resend" button available for pending users
+6. When recipient connects, status auto-updates to "Connected"
 
 ### Sending Links (Admin)
 1. Right-click on page → "Shareff" → "Send to [Science]"
@@ -198,11 +223,16 @@ Content-Type: application/json
 {
   "adminEmail": "don@email.com",
   "userEmail": "kev@email.com",
-  "userName": "Kev"
+  "userName": "Kev",
+  "status": "pending"
 }
 
 → { "success": true }
 ```
+
+**Status field:** `"pending"` or `"connected"` (defaults to `"connected"` for backward compatibility)
+
+**Auto-connection detection:** If a user with `status: "pending"` calls addUser (when connecting), their status automatically updates to `"connected"` and a welcome link is sent.
 
 Also called automatically when a recipient connects to an admin.
 
@@ -330,6 +360,55 @@ GET ?action=getAdmin&adminEmail=don@email.com
 
 Used when recipient enters admin email to validate and get display name.
 
+### Send Invite Email
+
+```
+POST ?action=sendInvite
+Content-Type: application/json
+
+{
+  "adminEmail": "don@email.com",
+  "adminName": "Don",
+  "userEmail": "kev@email.com",
+  "userName": "Kev",
+  "extensionUrl": "https://chrome.google.com/webstore/..."
+}
+
+→ { "success": true, "message": "Invite sent" }
+```
+
+Sends HTML email via PHP `mail()` with:
+- Install link for extension
+- Step-by-step setup instructions
+- Admin's email for connecting
+- Link to welcome page
+
+**Email headers:**
+- From: `Shareff <shareff@dbooth.net>`
+- Reply-To: Admin's email
+- Content-Type: `text/html; charset=UTF-8`
+
+### Get User Status
+
+```
+GET ?action=getUserStatus&adminEmail=don@email.com
+
+→ {
+    "users": [
+      {
+        "email": "kev@email.com",
+        "name": "Kev",
+        "status": "connected",
+        "addedAt": 1234567890,
+        "invitedAt": 1234567890,
+        "connectedAt": 1234567891
+      }
+    ]
+  }
+```
+
+Returns status of all users for an admin.
+
 ---
 
 ## Context Menus
@@ -399,30 +478,25 @@ Opens in a new browser tab when clicking Settings button.
 
 | Share Links (Admin) | Receive Links (Recipient) |
 |---------------------|---------------------------|
-| Users list + Add    | Connected admin display   |
-| Groups list + Create| + Connect button          |
-| Invite Friends btn  |                           |
+| Users list + Invite | Connected admin display   |
+| Status badges       | + Connect button          |
+| Groups list + Create|                           |
 
 **Sticky Save Bar:** Cancel | Save Changes
 
 **Modals:**
-- Add User (name, email)
+- Invite User (name, email → sends invite email)
+- Resend Invite (for pending users)
 - Create Group (name, member checkboxes)
 - Edit Group (name, members, delete)
 - Connect to Admin (email lookup)
-- Invite Friends (copy-paste message)
 
-### Invite Modal
+### User List Display
 
-**Title:** Invite Friends
-
-**Content:** Pre-formatted message with:
-- Friendly intro
-- Extension install link
-- Step-by-step setup instructions
-- Admin's email for connecting
-
-**Actions:** `[Close]` `[Copy to Clipboard]`
+Each user shows:
+- Name + status badge ("Pending" yellow / "Connected" green)
+- Email address
+- Actions: "Resend" button (pending only), "Remove" button
 
 ---
 
@@ -499,6 +573,10 @@ const unreadLinks = links.filter(link =>
     /firefox              - Firefox build (copies of source files)
       manifest.json       - Copy of manifest.firefox.json
 
+  /docs                   - GitHub Pages site (dbooth11.github.io/sherrif)
+    index.html            - Landing page
+    welcome.html          - Welcome page sent to new users
+
   /server
     api.php               - Single API file
     .htaccess             - Security rules
@@ -572,7 +650,15 @@ curl "https://dbooth.net/server/api.php?action=getLinks&adminEmail=don@test.com"
 
 ## Changelog
 
-### v2.0 (Current)
+### v2.1 (Current)
+- Unified Add + Invite flow (email sent automatically)
+- User status tracking (pending/connected)
+- Auto-detection when recipient connects
+- Welcome link auto-sent to new users
+- Resend invite for pending users
+- GitHub Pages welcome/landing pages
+
+### v2.0
 - Complete rewrite from v1 (GitHub Gist backend)
 - PHP flat-file backend
 - Admin/Recipient model
