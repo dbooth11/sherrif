@@ -5,4 +5,7 @@ config.js
 config.example.js
 server/data/
 server/*.json
+shareff/data/
+shareff/*.json
+dist/*.zip
 .claude/

@@ -1,11 +1,12 @@
 // ===== Shareff v2 - Background Script =====
 // Service worker for polling, notifications, and context menus
 
-const POLL_INTERVAL_MINUTES = 0.5; // 30 seconds
+const POLL_INTERVAL_MINUTES = 20;
 const ALARM_NAME = "checkNewLinks";
 
 // Hardcoded API URL for now
-const API_URL = "https://dbooth.net/server/api.php";
+const API_URL = "https://dbooth.net/shareff/api.php";
+const API_KEY = "sh2_2270d1d4054dde1695f2ccb4f5a84af0";
 
 const api = typeof browser !== "undefined" ? browser : chrome;
 
@@ -63,9 +64,9 @@ async function apiCall(action, params = {}, method = "GET") {
     });
   }
 
-  const options = { method };
+  const options = { method, headers: { "X-Shareff-Key": API_KEY } };
   if (method === "POST") {
-    options.headers = { "Content-Type": "application/json" };
+    options.headers["Content-Type"] = "application/json";
     options.body = JSON.stringify(params);
   }
 
@@ -88,6 +89,7 @@ function updateIconWithCount(count) {
       const canvas = new OffscreenCanvas(size, size);
       const ctx = canvas.getContext("2d");
 
+      // Solid black background - fill entire canvas, no alpha
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, size, size);
 
@@ -95,17 +97,37 @@ function updateIconWithCount(count) {
       ctx.textBaseline = "middle";
 
       if (count === 0) {
-        // Show 🤓 emoji when no unread links
-        const fontSize = Math.floor(size * 0.8);
+        // Draw 🤓 emoji filling the canvas
+        const fontSize = Math.floor(size * 1.0);
         ctx.font = `${fontSize}px sans-serif`;
         ctx.fillText("🤓", size / 2, size / 2);
       } else {
-        // Show count in green
+        // Green number filling the canvas
         ctx.fillStyle = "#00ff00";
-        const fontSize = Math.floor(size * 0.9);
-        ctx.font = `bold ${fontSize}px Arial`;
-        ctx.fillText(String(count), size / 2, size / 2);
+        const text = String(count);
+        const fontSize = text.length > 2
+          ? Math.floor(size * 0.7)
+          : text.length > 1
+            ? Math.floor(size * 0.85)
+            : Math.floor(size * 1.0);
+        ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+        ctx.fillText(text, size / 2, size / 2);
       }
+
+      // Force all transparent pixels to solid black
+      const data = ctx.getImageData(0, 0, size, size);
+      const px = data.data;
+      for (let i = 3; i < px.length; i += 4) {
+        if (px[i] < 255) {
+          // Blend onto black: premultiply then force opaque
+          const a = px[i] / 255;
+          px[i - 3] = Math.round(px[i - 3] * a); // R
+          px[i - 2] = Math.round(px[i - 2] * a); // G
+          px[i - 1] = Math.round(px[i - 1] * a); // B
+          px[i] = 255; // A
+        }
+      }
+      ctx.putImageData(data, 0, 0);
 
       imageData[size] = ctx.getImageData(0, 0, size, size);
     });
@@ -269,12 +291,57 @@ api.contextMenus.onClicked.addListener(async (info, tab) => {
       target
     }, "POST");
 
-    showNotification("Link Sent!", `Sent to ${recipientName}`);
+    showToast(tab.id, `Sent to ${recipientName}`);
   } catch (err) {
     console.error("Error sending link:", err);
-    showNotification("Error", "Failed to send link: " + err.message);
+    showToast(tab.id, "Failed to send: " + err.message, true);
   }
 });
+
+// ===== Toast Bubble =====
+function showToast(tabId, message, isError = false) {
+  api.scripting.executeScript({
+    target: { tabId },
+    args: [message, isError],
+    func: (msg, err) => {
+      const existing = document.getElementById("shareff-toast");
+      if (existing) existing.remove();
+
+      const toast = document.createElement("div");
+      toast.id = "shareff-toast";
+      toast.textContent = msg;
+      Object.assign(toast.style, {
+        position: "fixed",
+        top: "20px",
+        right: "20px",
+        background: err ? "#d32f2f" : "#4CAF50",
+        color: "white",
+        padding: "12px 20px",
+        borderRadius: "8px",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+        fontSize: "14px",
+        fontWeight: "600",
+        zIndex: "2147483647",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        opacity: "0",
+        transform: "translateY(-10px)",
+        transition: "opacity 0.3s, transform 0.3s"
+      });
+
+      document.body.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateY(0)";
+      });
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(-10px)";
+        setTimeout(() => toast.remove(), 300);
+      }, 2000);
+    }
+  }).catch(() => {});
+}
 
 // ===== Notifications =====
 function showNotification(title, message, url = null) {
@@ -392,7 +459,7 @@ api.runtime.onInstalled.addListener(async () => {
   await rebuildContextMenu();
 
   api.alarms.create(ALARM_NAME, {
-    delayInMinutes: 0.5,
+    delayInMinutes: 1,
     periodInMinutes: POLL_INTERVAL_MINUTES
   });
 
@@ -417,7 +484,7 @@ api.runtime.onStartup.addListener(async () => {
     const existingAlarm = await api.alarms.get(ALARM_NAME);
     if (!existingAlarm) {
       api.alarms.create(ALARM_NAME, {
-        delayInMinutes: 0.5,
+        delayInMinutes: 1,
         periodInMinutes: POLL_INTERVAL_MINUTES
       });
     }

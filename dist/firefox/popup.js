@@ -4,7 +4,8 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
 
 // Hardcoded API URL
-const API_URL = "https://dbooth.net/server/api.php";
+const API_URL = "https://dbooth.net/shareff/api.php";
+const API_KEY = "sh2_2270d1d4054dde1695f2ccb4f5a84af0";
 
 // Maximum number of read IDs to keep (prevent storage quota overflow)
 const MAX_READ_IDS = 500;
@@ -83,9 +84,9 @@ async function apiCall(action, params = {}, method = "GET") {
     });
   }
 
-  const options = { method };
+  const options = { method, headers: { "X-Shareff-Key": API_KEY } };
   if (method === "POST") {
-    options.headers = { "Content-Type": "application/json" };
+    options.headers["Content-Type"] = "application/json";
     options.body = JSON.stringify(params);
   }
 
@@ -209,15 +210,14 @@ function renderLinks(links) {
   elements.linksList.innerHTML = sorted.map(link => {
     const isUnread = !state.readIds.includes(link.id);
     const date = new Date(link.ts);
-    const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const timeStr = date.toLocaleDateString([], { month: "short", day: "numeric" });
 
     return `
       <li class="link-item">
         <a href="${escapeHtml(link.url)}" target="_blank" class="link-item-title ${isUnread ? 'fw-bold text-primary' : ''}" data-link-id="${link.id}">
           ${isUnread ? '<span class="badge bg-success me-1">NEW</span>' : ''}
           ${escapeHtml(link.title || link.url)}
-        </a>
-        <div class="link-item-meta">From: ${escapeHtml(link.fromName)} &bull; ${timeStr}</div>
+        </a><span class="link-item-meta">  ${escapeHtml(link.fromName)} &bull; ${timeStr}</span>
       </li>
     `;
   }).join("");

@@ -5,7 +5,8 @@
 Shareff v2 is a browser extension for sharing links with friends. An **admin** creates users and groups, then shares links via context menu. **Recipients** receive links and can send back to the admin.
 
 **Backend:** PHP API with flat file storage
-**API URL:** `https://dbooth.net/server/api.php` (hardcoded)
+**API URL:** `https://dbooth.net/shareff/api.php` (hardcoded)
+**Server directory:** `https://dbooth.net/shareff/` — all server-side files live here (API, email, welcome page, data)
 **Platforms:** Chrome and Firefox (Manifest V3)
 **Version:** 2.0
 
@@ -196,7 +197,7 @@ Admin's pool of known recipients. Each user has a **status**:
 
 ## API Specification
 
-**Base URL:** `https://dbooth.net/server/api.php`
+**Base URL:** `https://dbooth.net/shareff/api.php`
 
 ### Register/Update Admin
 
@@ -381,7 +382,7 @@ Sends HTML email via PHP `mail()` with:
 - Install link for extension
 - Step-by-step setup instructions
 - Admin's email for connecting
-- Link to welcome page
+- Link to welcome page (`https://www.dbooth.net/shareff/welcome.html`)
 
 **Email headers:**
 - From: `Shareff <shareff@dbooth.net>`
@@ -517,8 +518,11 @@ const unreadLinks = links.filter(link =>
 - 1+ unread: Shows green number on black background
 
 ### Notifications
-- Only for new links not previously seen
-- Click notification → open link URL
+- **Incoming links (polling):** System notifications via `chrome.notifications`
+- **Sent links:** In-page toast bubble injected via `chrome.scripting.executeScript`
+  - Green toast for success, red for errors
+  - Slides in top-right, auto-dismisses after 2 seconds
+- Click system notification → open link URL
 
 ### Storage Limits
 - Max 100 links per admin (server-side)
@@ -526,8 +530,20 @@ const unreadLinks = links.filter(link =>
 - chrome.storage.sync: 102KB total, 8KB per item
 
 ### Polling
-- Every 30 seconds (minimum allowed in Chrome 120+)
+- Every 20 minutes via `chrome.alarms` (POLL_INTERVAL_MINUTES = 20)
 - Alarm recreated on service worker wake-up if missing
+
+---
+
+## Authentication
+
+All API requests require an `X-Shareff-Key` header. Requests without a valid key receive HTTP 403.
+
+```
+X-Shareff-Key: sh2_2270d1d4054dde1695f2ccb4f5a84af0
+```
+
+This prevents unauthorized API access and spam from random endpoint discovery. The key is hardcoded in both the extension JS and server PHP.
 
 ---
 
@@ -540,13 +556,16 @@ const unreadLinks = links.filter(link =>
     "contextMenus",
     "notifications",
     "alarms",
-    "activeTab"
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
-    "*://*/*"
+    "https://dbooth.net/*"
   ]
 }
 ```
+
+- `scripting` — Used to inject toast notifications into the active tab after sending a link
 
 ---
 
@@ -555,17 +574,16 @@ const unreadLinks = links.filter(link =>
 ```
 /sherrif
   manifest.json           - Chrome manifest (service_worker)
-  manifest.chrome.json    - Chrome-specific manifest (backup)
   manifest.firefox.json   - Firefox-specific manifest (scripts)
   background.js           - Service worker: polling, notifications, context menu
   popup.html              - Main popup (links view only)
   popup.js                - Popup logic (links, search)
+  popup.css               - Popup styles
   settings.html           - Full-page settings (opens in new tab)
   settings.js             - Settings page logic
+  settings.css            - Settings styles
   icons/                  - Extension icons (16, 48, 128px PNG)
   V2_SPEC.md             - This specification
-  PLANNING.md            - Roadmap and future work
-  README.md              - User-facing documentation
 
   /dist
     /chrome               - Chrome build (symlinks to source files)
@@ -573,14 +591,12 @@ const unreadLinks = links.filter(link =>
     /firefox              - Firefox build (copies of source files)
       manifest.json       - Copy of manifest.firefox.json
 
-  /docs                   - GitHub Pages site (dbooth11.github.io/sherrif)
-    index.html            - Landing page
-    welcome.html          - Welcome page sent to new users
-
-  /server
-    api.php               - Single API file
-    .htaccess             - Security rules
-    README.md             - Server documentation
+  /shareff                - Server directory (https://dbooth.net/shareff/)
+    api.php               - Main API file
+    email.php             - Email API + shared email utilities
+    welcome.html          - Welcome page sent to new users via invite email
+    styles.css            - Styles for welcome page
+    .htaccess             - Security rules (blocks /data/ access, .json files)
     /data/admins/         - Flat JSON files per admin
 ```
 
@@ -627,7 +643,7 @@ cp popup.js popup.html background.js dist/firefox/
 ### Testing the API
 
 ```bash
-curl "https://dbooth.net/server/api.php?action=getLinks&adminEmail=don@test.com"
+curl "https://dbooth.net/shareff/api.php?action=getLinks&adminEmail=don@test.com"
 ```
 
 ---
@@ -656,7 +672,10 @@ curl "https://dbooth.net/server/api.php?action=getLinks&adminEmail=don@test.com"
 - Auto-detection when recipient connects
 - Welcome link auto-sent to new users
 - Resend invite for pending users
-- GitHub Pages welcome/landing pages
+- Landing page and welcome page served from server (`shareff/`)
+- API key authentication (`X-Shareff-Key` header)
+- In-page toast bubbles for send confirmation (via `scripting` permission)
+- External CSS files (popup.css, settings.css, shareff/styles.css)
 
 ### v2.0
 - Complete rewrite from v1 (GitHub Gist backend)

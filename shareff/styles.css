@@ -1,0 +1,410 @@
+/* ===== Shareff Docs - Shared Styles ===== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+
+code {
+  background: #e8e8e8;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* ===== Index Page ===== */
+
+.page-index { color: #333; }
+
+.page-index .container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.hero {
+  text-align: center;
+  color: white;
+  margin-bottom: 40px;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin: 0 0 16px;
+  font-weight: 700;
+}
+
+.hero p {
+  font-size: 1.25rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.page-index .card { margin-bottom: 24px; }
+
+.card-body { padding: 32px; }
+
+.page-index h2 {
+  color: #333;
+  font-size: 1.5rem;
+  margin: 0 0 20px;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.feature {
+  text-align: center;
+  padding: 24px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.feature h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.feature p {
+  margin: 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.page-index .cta {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.page-index .cta-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px 40px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.page-index .cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.how-it-works {
+  background: #f0f4f8;
+  padding: 32px;
+}
+
+.page-index .steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.step {
+  flex: 1;
+  min-width: 150px;
+  text-align: center;
+}
+
+.step-number {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin: 0 auto 12px;
+}
+
+.step h4 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.step p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.page-index .footer {
+  text-align: center;
+  color: rgba(255,255,255,0.8);
+  padding: 20px;
+  font-size: 0.9rem;
+}
+
+.page-index .footer a { color: white; }
+
+@media (max-width: 600px) {
+  .hero h1 { font-size: 2rem; }
+  .page-index .steps { flex-direction: column; }
+}
+
+/* ===== Welcome Page ===== */
+
+.page-welcome .container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.header {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  padding: 40px 30px;
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0 0 8px;
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 1.1rem;
+}
+
+.content { padding: 30px; }
+
+.welcome-message {
+  background: #f0f9f0;
+  border-left: 4px solid #4CAF50;
+  padding: 20px;
+  margin-bottom: 30px;
+  border-radius: 0 8px 8px 0;
+}
+
+.welcome-message strong { color: #2e7d32; }
+
+.page-welcome h2 {
+  color: #333;
+  font-size: 1.3rem;
+  margin: 30px 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #eee;
+}
+
+.page-welcome h2:first-of-type { margin-top: 0; }
+
+.page-welcome p { color: #444; }
+
+.page-welcome .steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 30px;
+  counter-reset: step;
+}
+
+.page-welcome .steps li {
+  position: relative;
+  padding: 16px 16px 16px 60px;
+  margin-bottom: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  counter-increment: step;
+}
+
+.page-welcome .steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  background: #4CAF50;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.page-welcome .steps li strong {
+  display: block;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.page-welcome .steps li span {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Flow diagram */
+.flow {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0 30px;
+}
+
+.flow-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.flow-row:last-child { margin-bottom: 0; }
+
+.flow-box {
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  padding: 14px 18px;
+  text-align: center;
+  min-width: 120px;
+}
+
+.flow-box.green {
+  border-color: #4CAF50;
+  background: #f0f9f0;
+}
+
+.flow-box.blue {
+  border-color: #667eea;
+  background: #f0f4ff;
+}
+
+.flow-box.orange {
+  border-color: #ff9800;
+  background: #fff8e1;
+}
+
+.flow-box-icon { font-size: 1.5rem; margin-bottom: 4px; }
+.flow-box-label { font-size: 0.85rem; font-weight: 600; color: #333; }
+.flow-box-sub { font-size: 0.75rem; color: #888; margin-top: 2px; }
+.flow-arrow { font-size: 1.2rem; color: #999; }
+
+/* Roles section */
+.roles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0 30px;
+}
+
+.role-card {
+  padding: 20px;
+  border-radius: 10px;
+  border: 2px solid;
+}
+
+.role-card.admin {
+  border-color: #4CAF50;
+  background: #f0f9f0;
+}
+
+.role-card.recipient {
+  border-color: #667eea;
+  background: #f0f4ff;
+}
+
+.role-card h4 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.role-card.admin h4 { color: #2e7d32; }
+.role-card.recipient h4 { color: #4a5ab9; }
+
+.role-card ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.role-card ul li { margin-bottom: 4px; }
+
+/* Info box */
+.info-box {
+  background: #e8f4fd;
+  border-left: 4px solid #667eea;
+  padding: 16px 20px;
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.info-box strong { color: #4a5ab9; }
+
+.page-welcome .cta {
+  text-align: center;
+  padding: 24px 0 8px;
+}
+
+.page-welcome .cta-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  padding: 14px 32px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.page-welcome .cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.page-welcome .footer {
+  text-align: center;
+  padding: 20px 30px 30px;
+  color: #999;
+  font-size: 0.85rem;
+}
+
+.page-welcome .footer a { color: #667eea; }
+
+@media (max-width: 520px) {
+  .roles { grid-template-columns: 1fr; }
+  .flow-row { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); }
+  .header h1 { font-size: 2rem; }
+}

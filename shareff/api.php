@@ -9,7 +9,7 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-Shareff-Key');
 
 // Handle preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -17,11 +17,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// API key validation - blocks unauthorized access
+const API_KEY = 'sh2_2270d1d4054dde1695f2ccb4f5a84af0';
+
+$providedKey = $_SERVER['HTTP_X_SHAREFF_KEY'] ?? '';
+if ($providedKey !== API_KEY) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Forbidden']);
+    exit;
+}
+
 const DATA_DIR = __DIR__ . '/data/admins/';
 const MAX_LINKS = 100;
-const WELCOME_PAGE_URL = 'https://dbooth11.github.io/sherrif/welcome.html';
-const FROM_EMAIL = 'shareff@dbooth.net';
-const FROM_NAME = 'Shareff';
+
+// Include shared email utilities if available (provides sendEmail, buildHtml, sendInviteEmail)
+$emailLib = __DIR__ . '/email.php';
+if (file_exists($emailLib)) {
+    require_once $emailLib;
+}
 
 // Ensure data directory exists
 if (!is_dir(DATA_DIR)) {
@@ -454,6 +467,7 @@ function handleGetAdmin() {
 
 /**
  * Send invite email to a user
+ * Uses shared sendInviteEmail() from email.php
  */
 function handleSendInvite() {
     $data = getJsonInput();
@@ -478,70 +492,11 @@ function handleSendInvite() {
         $adminName = $admin['name'] ?? 'A friend';
     }
 
-    // Build email
-    $subject = "$adminName wants to share links with you on Shareff";
-
-    $body = "Hey $userName!\n\n";
-    $body .= "$adminName invited you to Shareff - a simple way to share interesting links while browsing.\n\n";
-    $body .= "Getting started is easy:\n\n";
-    $body .= "1. Install the Shareff extension:\n";
-    $body .= "   $extensionUrl\n\n";
-    $body .= "2. Click the extension icon and enter your name and email\n\n";
-    $body .= "3. Go to Settings and click \"+ Connect\" under \"Receive Links\"\n\n";
-    $body .= "4. Enter this email: $adminEmail\n\n";
-    $body .= "That's it! $adminName can then send you links directly to your browser.\n\n";
-    $body .= "Learn more: " . WELCOME_PAGE_URL . "\n\n";
-    $body .= "- The Shareff Team";
-
-    // HTML version
-    $htmlBody = "
-    <div style='font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
-        <h2 style='color: #4CAF50;'>$adminName wants to share links with you!</h2>
-        <p>Hey $userName!</p>
-        <p>$adminName invited you to <strong>Shareff</strong> - a simple way to share interesting links while browsing.</p>
-
-        <div style='background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;'>
-            <h3 style='margin-top: 0;'>Getting started:</h3>
-            <ol style='padding-left: 20px;'>
-                <li style='margin-bottom: 10px;'><strong>Install the extension:</strong><br>
-                    <a href='$extensionUrl' style='color: #4CAF50;'>$extensionUrl</a></li>
-                <li style='margin-bottom: 10px;'><strong>Enter your info:</strong> Click the extension and add your name/email</li>
-                <li style='margin-bottom: 10px;'><strong>Connect:</strong> Go to Settings → \"+ Connect\" under Receive Links</li>
-                <li style='margin-bottom: 10px;'><strong>Enter this email:</strong> <code style='background: #e8e8e8; padding: 2px 6px; border-radius: 4px;'>$adminEmail</code></li>
-            </ol>
-        </div>
-
-        <p>That's it! $adminName can then send you links directly to your browser.</p>
-
-        <p style='margin-top: 30px;'>
-            <a href='" . WELCOME_PAGE_URL . "' style='background: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;'>Learn More About Shareff</a>
-        </p>
-
-        <p style='color: #999; font-size: 12px; margin-top: 30px;'>
-            This invite was sent by $adminName ($adminEmail) via Shareff.
-        </p>
-    </div>
-    ";
-
-    // Email headers
-    $headers = [
-        'From' => FROM_NAME . ' <' . FROM_EMAIL . '>',
-        'Reply-To' => $adminEmail,
-        'MIME-Version' => '1.0',
-        'Content-Type' => 'text/html; charset=UTF-8',
-        'X-Mailer' => 'Shareff/2.0'
-    ];
-
-    $headerString = '';
-    foreach ($headers as $key => $value) {
-        $headerString .= "$key: $value\r\n";
-    }
-
-    // Send email
-    $sent = mail($userEmail, $subject, $htmlBody, $headerString);
+    // Send using shared email utility
+    $sent = sendInviteEmail($adminEmail, $adminName, $userEmail, $userName, $extensionUrl);
 
     if ($sent) {
-        // Update user status to invited
+        // Update user's invitedAt timestamp
         foreach ($admin['users'] as &$user) {
             if ($user['email'] === $userEmail) {
                 $user['invitedAt'] = time();

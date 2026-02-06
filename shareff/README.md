@@ -1,6 +1,6 @@
-# SpitNet v2 Server
+# Shareff v2 Server
 
-PHP API backend for the SpitNet browser extension.
+PHP API backend for the Shareff browser extension.
 
 ## Requirements
 
@@ -10,14 +10,14 @@ PHP API backend for the SpitNet browser extension.
 
 ## Deployment
 
-1. Upload the `server/` folder to your web host
+1. Upload the `shareff/` folder to your web host
 2. Ensure the `data/admins/` directory is writable:
    ```bash
    chmod 755 data/admins
    ```
 3. Test the API:
    ```bash
-   curl https://yoursite.com/spitnet/api.php?action=getAdmin&adminEmail=test@example.com
+   curl -H "X-Shareff-Key: YOUR_API_KEY" https://dbooth.net/shareff/api.php?action=getAdmin&adminEmail=test@example.com
    ```
    Should return: `{"exists":false}`
 
@@ -37,17 +37,20 @@ PHP API backend for the SpitNet browser extension.
 
 See `V2_SPEC.md` for full API documentation.
 
-## Security Notes
+## Security
 
-- The `.htaccess` file blocks direct access to JSON files
-- No authentication - relies on obscurity of admin emails
-- For production use, consider adding API keys or rate limiting
+- `.htaccess` blocks direct access to JSON data files
+- All API requests require `X-Shareff-Key` header authentication
+- `email.php` handles invite emails (standalone endpoint + included by api.php)
 
 ## File Structure
 
 ```
-server/
+shareff/
   api.php           - Main API
+  email.php         - Email invite system
+  welcome.html      - Welcome page for new users
+  styles.css        - Welcome page styles
   .htaccess         - Security rules
   data/
     admins/

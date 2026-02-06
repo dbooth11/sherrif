@@ -8,10 +8,11 @@
     "contextMenus",
     "notifications",
     "alarms",
-    "activeTab"
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
-    "*://*/*"
+    "https://dbooth.net/*"
   ],
   "background": {
     "service_worker": "background.js"

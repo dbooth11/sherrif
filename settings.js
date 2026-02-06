@@ -4,16 +4,17 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
 
 // Hardcoded API URL
-const API_URL = "https://dbooth.net/server/api.php";
+const API_URL = "https://dbooth.net/shareff/api.php";
+const API_KEY = "sh2_2270d1d4054dde1695f2ccb4f5a84af0";
 
 // Maximum read IDs (matches popup.js)
 const MAX_READ_IDS = 500;
 
 // Chrome Web Store unlisted extension URL (update this after publishing)
-const EXTENSION_URL = "https://chrome.google.com/webstore/detail/shareff/YOUR_EXTENSION_ID";
+const EXTENSION_URL = "https://chrome.google.com/webstore/detail/shareff/fjannpohfkbbhjkgfdecbakllfadlfpk";
 
 // Welcome page URL
-const WELCOME_PAGE_URL = "https://dbooth11.github.io/sherrif/welcome.html";
+const WELCOME_PAGE_URL = "https://www.dbooth.net/shareff/welcome.html";
 
 // ===== State =====
 let state = {
@@ -133,9 +134,9 @@ async function apiCall(action, params = {}, method = "GET") {
     });
   }
 
-  const options = { method };
+  const options = { method, headers: { "X-Shareff-Key": API_KEY } };
   if (method === "POST") {
-    options.headers = { "Content-Type": "application/json" };
+    options.headers["Content-Type"] = "application/json";
     options.body = JSON.stringify(params);
   }
 

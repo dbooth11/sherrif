@@ -78,9 +78,9 @@ cp popup.js popup.html background.js dist/firefox/
 
 - **Extension**: Manifest V3 browser extension (Chrome/Firefox)
 - **Backend**: PHP API with flat file storage
-- **API URL**: `https://dbooth.net/server/api.php`
+- **API URL**: `https://dbooth.net/shareff/api.php`
 
-See [server/README.md](server/README.md) for server setup.
+See [shareff/README.md](shareff/README.md) for server setup.
 
 ## License
 
