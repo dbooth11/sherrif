@@ -80,6 +80,9 @@ try {
         case 'getUserStatus':
             handleGetUserStatus();
             break;
+        case 'deleteAdmin':
+            handleDeleteAdmin();
+            break;
         default:
             jsonResponse(['error' => 'Unknown action'], 400);
     }
@@ -539,6 +542,27 @@ function handleGetUserStatus() {
     }
 
     jsonResponse(['users' => $userStatuses]);
+}
+
+/**
+ * Delete an admin's data file (erase network)
+ */
+function handleDeleteAdmin() {
+    $data = getJsonInput();
+    $adminEmail = $data['adminEmail'] ?? '';
+
+    if (!$adminEmail) {
+        jsonResponse(['error' => 'Missing adminEmail'], 400);
+    }
+
+    $filename = DATA_DIR . sanitizeFilename($adminEmail) . '.json';
+
+    if (!file_exists($filename)) {
+        jsonResponse(['error' => 'Admin not found'], 404);
+    }
+
+    unlink($filename);
+    jsonResponse(['success' => true]);
 }
 
 // ============ Helpers ============

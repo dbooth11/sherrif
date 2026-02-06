@@ -44,6 +44,7 @@ const elements = {
   connectAdminBtn: $("connectAdminBtn"),
   saveSettingsBtn: $("saveSettingsBtn"),
   cancelSettingsBtn: $("cancelSettingsBtn"),
+  deleteNetworkBtn: $("deleteNetworkBtn"),
   // Status
   statusBar: $("statusBar"),
   // Add User Modal (Unified Add + Invite)
@@ -656,11 +657,6 @@ async function saveSettings() {
 
     api.runtime.sendMessage({ action: "settingsChanged" }).catch(() => {});
     showStatus("Settings saved!");
-
-    // Close the tab after a brief delay
-    setTimeout(() => {
-      window.close();
-    }, 1000);
   } catch (err) {
     alert("Error saving settings: " + err.message);
   }
@@ -668,6 +664,40 @@ async function saveSettings() {
 
 function cancelSettings() {
   window.close();
+}
+
+async function deleteNetwork() {
+  if (!state.myEmail) {
+    alert("No network to delete — save your settings first.");
+    return;
+  }
+
+  if (!confirm("Are you sure? This will permanently delete all users, groups, and links from the server.")) {
+    return;
+  }
+
+  if (!confirm("This cannot be undone. Delete everything?")) {
+    return;
+  }
+
+  try {
+    await apiCall("deleteAdmin", { adminEmail: state.myEmail }, "POST");
+
+    // Clear local state
+    state.users = [];
+    state.groups = [];
+    state.adminEmail = "";
+    state.adminName = "";
+    await saveState();
+
+    api.runtime.sendMessage({ action: "settingsChanged" }).catch(() => {});
+    showStatus("Network deleted.");
+    renderUsersList();
+    renderGroupsList();
+    renderAdminConnection();
+  } catch (err) {
+    alert("Error deleting network: " + err.message);
+  }
 }
 
 // ===== Resend Invite System =====
@@ -721,6 +751,7 @@ function setupEventListeners() {
   // Save/Cancel
   elements.saveSettingsBtn.addEventListener("click", saveSettings);
   elements.cancelSettingsBtn.addEventListener("click", cancelSettings);
+  elements.deleteNetworkBtn.addEventListener("click", deleteNetwork);
 
   // Add User
   elements.addUserBtn.addEventListener("click", openAddUserModal);
