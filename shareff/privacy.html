@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shareff Privacy Policy</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="page-welcome">
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <h1>Privacy Policy</h1>
+        <p>Shareff Browser Extension</p>
+      </div>
+
+      <div class="content">
+        <p><em>Last updated: February 5, 2026</em></p>
+
+        <p>Shareff is a simple browser extension for sharing links between small groups of friends. It is not a social
+          network, does not serve ads, and does not track you. This policy explains exactly what data is involved and
+          how it's handled.</p>
+
+        <h2>What Shareff Stores</h2>
+
+        <p><strong>On your device</strong> (via browser extension storage):</p>
+        <ul>
+          <li>Your name and email address (entered by you in Settings)</li>
+          <li>The email address of friends you've connected with</li>
+          <li>A list of link IDs you've already read (so we can show unread badges)</li>
+        </ul>
+
+        <p><strong>On our server:</strong></p>
+        <ul>
+          <li>Your name and email address</li>
+          <li>The names and email addresses of friends in your network</li>
+          <li>Links shared within your network (URL, page title, sender, recipient, timestamp)</li>
+          <li>Group names and membership (if you create groups)</li>
+        </ul>
+
+        <p>Each network's data is stored as a single flat text file on the server. There is no database, no analytics
+          platform, and no third-party data storage.</p>
+
+        <h2>What Shareff Does NOT Collect</h2>
+
+        <ul>
+          <li>Browsing history</li>
+          <li>Cookies or tracking identifiers</li>
+          <li>Location data</li>
+          <li>Device information or fingerprints</li>
+          <li>Usage analytics or telemetry</li>
+          <li>Any data from pages you visit (unless you explicitly share a link)</li>
+        </ul>
+
+        <h2>How Your Data Is Used</h2>
+
+        <p>Your data is used for one purpose: delivering shared links between you and your friends. Specifically:</p>
+
+        <ul>
+          <li>Your email identifies you within your friend group</li>
+          <li>Your name is shown to friends when you send them a link</li>
+          <li>Shared links are stored so recipients can retrieve them</li>
+          <li>Email addresses are used to send invite emails when you add a new friend</li>
+        </ul>
+
+        <p>That's it. Your data is never sold, shared with third parties, used for advertising, or analyzed in any way.
+        </p>
+        <p>To delete your network, the extension just deletes your text file on the server.</p>
+
+        <h2>Network Communication</h2>
+
+        <p>The extension communicates only with our server (<code>dbooth.net/shareff/</code>) over HTTPS. It makes
+          requests to:</p>
+
+        <ul>
+          <li>Register your name and email</li>
+          <li>Send and retrieve shared links</li>
+          <li>Manage your friend connections and groups</li>
+          <li>Send invite emails to new friends</li>
+        </ul>
+
+        <p>The extension does not contact any other servers or services.</p>
+
+        <h2>Permissions Explained</h2>
+
+        <ul>
+          <li><strong>storage</strong> &mdash; Saves your settings and read-link history locally in your browser</li>
+          <li><strong>contextMenus</strong> &mdash; Adds "Shareff" to the right-click menu so you can send links</li>
+          <li><strong>notifications</strong> &mdash; Shows a browser notification when someone sends you a link</li>
+          <li><strong>alarms</strong> &mdash; Periodically checks for new links (every 20 minutes)</li>
+          <li><strong>activeTab</strong> &mdash; Gets the URL and title of the current page when you choose to share it
+          </li>
+          <li><strong>scripting</strong> &mdash; Shows a brief toast message on the page confirming a link was sent</li>
+        </ul>
+
+        <h2>Data Retention &amp; Deletion</h2>
+
+        <p>Links are retained on the server up to a maximum of 100 per network. Older links are automatically removed as
+          new ones are added.</p>
+
+        <p>You can delete all your data at any time:</p>
+
+        <ul>
+          <li><strong>Server data:</strong> Open Settings and click "Delete Network" to permanently delete the text file
+            that contains all friend, group, and link info from the server</li>
+          <li><strong>Local data:</strong> Uninstalling the extension removes all locally stored settings</li>
+        </ul>
+
+        <h2>Who Can See Your Links</h2>
+        <p> The goal is for the group admin to be able to send a link to a friend and that friend can send a link to the
+          admin, Friends in the same cannot send links to other friends in the network.</p>
+        <p>A Group just loops over a list of friends and send a link. To the friend in the group, it looks the same.
+          Friends don't know they are in a group.</p>
+
+        <h2>Contact</h2>
+
+        <p>Shareff is a personal project by Donald Booth. If you have questions about this policy or your data, reach
+          out at <a href="mailto:don@dbooth.net">don@dbooth.net</a>.</p>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

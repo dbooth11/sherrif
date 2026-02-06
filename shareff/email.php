@@ -16,7 +16,7 @@
 
 // ============ Config (safe to re-include) ============
 
-if (!defined('FROM_EMAIL')) define('FROM_EMAIL', 'shareff@dbooth.net');
+if (!defined('FROM_EMAIL')) define('FROM_EMAIL', 'don@dbooth.net');
 if (!defined('FROM_NAME')) define('FROM_NAME', 'Shareff');
 if (!defined('WELCOME_PAGE_URL')) define('WELCOME_PAGE_URL', 'https://www.dbooth.net/shareff/welcome.html');
 
