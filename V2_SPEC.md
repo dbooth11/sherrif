@@ -410,6 +410,21 @@ GET ?action=getUserStatus&adminEmail=don@email.com
 
 Returns status of all users for an admin.
 
+### Delete Admin (Erase Network)
+
+```
+POST ?action=deleteAdmin
+Content-Type: application/json
+
+{
+  "adminEmail": "don@email.com"
+}
+
+→ { "success": true }
+```
+
+Permanently deletes the admin's JSON data file from the server, erasing all users, groups, and links.
+
 ---
 
 ## Context Menus
@@ -672,10 +687,13 @@ curl "https://dbooth.net/shareff/api.php?action=getLinks&adminEmail=don@test.com
 - Auto-detection when recipient connects
 - Welcome link auto-sent to new users
 - Resend invite for pending users
-- Landing page and welcome page served from server (`shareff/`)
+- Welcome page served from server (`shareff/welcome.html`)
 - API key authentication (`X-Shareff-Key` header)
 - In-page toast bubbles for send confirmation (via `scripting` permission)
 - External CSS files (popup.css, settings.css, shareff/styles.css)
+- Delete Network feature (erases admin's server data)
+- Custom SVG-based icons (purple gradient + share symbol)
+- Directory listing disabled via .htaccess
 
 ### v2.0
 - Complete rewrite from v1 (GitHub Gist backend)
