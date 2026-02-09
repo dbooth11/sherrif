@@ -176,13 +176,13 @@ code {
 /* ===== Welcome Page ===== */
 
 .page-welcome .container {
-  max-width: 680px;
+
   margin: 0 auto;
   padding: 40px 20px;
 }
 
 .header {
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  background:#667eea;
   color: white;
   padding: 40px 30px;
   text-align: center;
